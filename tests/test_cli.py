@@ -35,3 +35,7 @@ class CommandTests(unittest.TestCase):
         result = self.run_files("A", "A=value")
         self.assertEqual(result.returncode, 2)
         self.assertEqual(result.stdout, "")
+
+    def test_all_categories_use_a_stable_order(self):
+        result = self.run_files("Z=1\nA=1\nB=old", "Z=1\nC=1\nB=new")
+        self.assertEqual(result.stdout, "MISSING A\nEXTRA C\nCHANGED B\n")
