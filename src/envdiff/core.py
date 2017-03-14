@@ -1,0 +1,26 @@
+"""The initial NAME=value parser and key comparison primitives."""
+
+
+def parse(text):
+    """Return a mapping parsed from simple NAME=value assignments."""
+    values = {}
+    for number, line in enumerate(text.splitlines(), 1):
+        if not line:
+            continue
+        name, marker, value = line.partition("=")
+        if not marker:
+            raise ValueError("line {0}: expected assignment".format(number))
+        if not name:
+            raise ValueError("line {0}: empty name".format(number))
+        values[name] = value
+    return values
+
+
+def compare(reference, target):
+    """Return sorted changed, missing and extra names only."""
+    return {
+        "missing": sorted(set(reference) - set(target)),
+        "extra": sorted(set(target) - set(reference)),
+        "changed": sorted(name for name in set(reference) & set(target)
+                          if reference[name] != target[name]),
+    }
