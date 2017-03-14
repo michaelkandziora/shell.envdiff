@@ -2,11 +2,13 @@
 import argparse
 import sys
 
+from . import __version__
 from .core import compare, parse
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Compare environment-file keys.")
+    parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("reference")
     parser.add_argument("target")
     args = parser.parse_args(argv)
@@ -15,7 +17,10 @@ def main(argv=None):
             reference = parse(stream.read())
         with open(args.target, "r") as stream:
             target = parse(stream.read())
-    except (IOError, ValueError) as exc:
+    except IOError:
+        print("envdiff: cannot read input", file=sys.stderr)
+        return 2
+    except ValueError as exc:
         print("envdiff: {0}".format(exc), file=sys.stderr)
         return 2
     report = compare(reference, target)

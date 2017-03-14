@@ -10,3 +10,4 @@ envdiff reference.env target.env
 ```
 
 Exit status is `0` for equal files, `1` for differences, and `2` for invalid input.
+Input errors are written to standard error and never include a parsed value.
