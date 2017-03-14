@@ -10,12 +10,20 @@ def parse(text):
         name, marker, value = line.partition("=")
         if not marker:
             raise ValueError("line {0}: expected assignment".format(number))
-        if not name or name.strip() != name:
+        if not _is_name(name):
             raise ValueError("line {0}: invalid name".format(number))
         if name in values:
             raise ValueError("line {0}: duplicate name".format(number))
         values[name] = value
     return values
+
+
+def _is_name(name):
+    """Recognize portable environment variable names for the base grammar."""
+    letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if not name or not (name[0] in letters or name[0] == "_"):
+        return False
+    return all(character in letters + "0123456789_" for character in name)
 
 
 def compare(reference, target):

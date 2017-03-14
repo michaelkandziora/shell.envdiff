@@ -3,7 +3,8 @@
 Compare simple `NAME=value` files while reporting keys, never values.
 
 Blank lines are ignored. Each nonblank line must contain one assignment and
-duplicate keys are invalid input.
+duplicate keys are invalid input. Names start with a letter or underscore and
+may otherwise contain letters, digits, and underscores.
 
 ```sh
 envdiff reference.env target.env
