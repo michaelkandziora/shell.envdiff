@@ -13,10 +13,8 @@ def main(argv=None):
     parser.add_argument("target")
     args = parser.parse_args(argv)
     try:
-        with open(args.reference, "r") as stream:
-            reference = parse(stream.read())
-        with open(args.target, "r") as stream:
-            target = parse(stream.read())
+        reference = _read_assignments(args.reference)
+        target = _read_assignments(args.target)
     except IOError:
         print("envdiff: cannot read input", file=sys.stderr)
         return 2
@@ -28,3 +26,9 @@ def main(argv=None):
         for name in report[kind]:
             print("{0} {1}".format(kind.upper(), name))
     return 1 if any(report.values()) else 0
+
+
+def _read_assignments(path):
+    """Read a complete text input without including it in diagnostics."""
+    with open(path, "r") as stream:
+        return parse(stream.read())
