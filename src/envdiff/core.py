@@ -10,8 +10,10 @@ def parse(text):
         name, marker, value = line.partition("=")
         if not marker:
             raise ValueError("line {0}: expected assignment".format(number))
-        if not name:
-            raise ValueError("line {0}: empty name".format(number))
+        if not name or name.strip() != name:
+            raise ValueError("line {0}: invalid name".format(number))
+        if name in values:
+            raise ValueError("line {0}: duplicate name".format(number))
         values[name] = value
     return values
 

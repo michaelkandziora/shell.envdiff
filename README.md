@@ -2,6 +2,9 @@
 
 Compare simple `NAME=value` files while reporting keys, never values.
 
+Blank lines are ignored. Each nonblank line must contain one assignment and
+duplicate keys are invalid input.
+
 ```sh
 envdiff reference.env target.env
 ```
