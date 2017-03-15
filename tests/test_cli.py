@@ -73,7 +73,7 @@ class CommandTests(unittest.TestCase):
             first = os.path.join(directory, "first.env")
             second = os.path.join(directory, "second.env")
             with open(first, "wb") as stream:
-                stream.write(b"A=\\xff")
+                stream.write(b"A=" + bytes(bytearray([255])))
             with open(second, "wb") as stream:
                 stream.write(b"A=value")
             result = subprocess.run([sys.executable, "-m", "envdiff", first, second],
@@ -81,7 +81,7 @@ class CommandTests(unittest.TestCase):
                                     universal_newlines=True)
             self.assertEqual(result.returncode, 2)
             self.assertEqual(result.stdout, "")
-            self.assertNotIn("\\xff", result.stderr)
+            self.assertNotIn("A=", result.stderr)
         finally:
             for filename in ("first.env", "second.env"):
                 path = os.path.join(directory, filename)
