@@ -36,6 +36,12 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertEqual(result.stdout, "")
 
+    def test_invalid_name_is_not_reflected_in_error_output(self):
+        result = self.run_files("BAD NAME=private", "A=value")
+        self.assertEqual(result.returncode, 2)
+        self.assertNotIn("BAD NAME", result.stderr)
+        self.assertNotIn("private", result.stderr)
+
     def test_all_categories_use_a_stable_order(self):
         result = self.run_files("Z=1\nA=1\nB=old", "Z=1\nC=1\nB=new")
         self.assertEqual(result.stdout, "MISSING A\nEXTRA C\nCHANGED B\n")

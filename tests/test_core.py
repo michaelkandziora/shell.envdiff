@@ -20,7 +20,7 @@ class ParseTests(unittest.TestCase):
 
     def test_names_follow_environment_convention(self):
         self.assertEqual(parse("_A=1\nA2=2\n"), {"_A": "1", "A2": "2"})
-        for line in ("1A=x", "A-B=x", "A B=x"):
+        for line in ("1A=x", "A-B=x", "A B=x", "A\tB=x", "Ä=x"):
             with self.subTest(line=line):
                 with self.assertRaises(ValueError):
                     parse(line)
