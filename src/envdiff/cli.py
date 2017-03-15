@@ -15,8 +15,8 @@ def main(argv=None):
     try:
         reference = _read_assignments(args.reference)
         target = _read_assignments(args.target)
-    except IOError:
-        print("envdiff: cannot read input", file=sys.stderr)
+    except (IOError, UnicodeError):
+        print("envdiff: cannot read UTF-8 input", file=sys.stderr)
         return 2
     except ValueError as exc:
         print("envdiff: {0}".format(exc), file=sys.stderr)
@@ -30,5 +30,5 @@ def main(argv=None):
 
 def _read_assignments(path):
     """Read a complete text input without including it in diagnostics."""
-    with open(path, "r") as stream:
+    with open(path, "r", encoding="utf-8") as stream:
         return parse(stream.read())

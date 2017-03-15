@@ -66,3 +66,25 @@ class CommandTests(unittest.TestCase):
                                 universal_newlines=True)
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout.strip(), "0.1.0")
+
+    def test_invalid_utf8_is_a_controlled_error(self):
+        directory = tempfile.mkdtemp()
+        try:
+            first = os.path.join(directory, "first.env")
+            second = os.path.join(directory, "second.env")
+            with open(first, "wb") as stream:
+                stream.write(b"A=\\xff")
+            with open(second, "wb") as stream:
+                stream.write(b"A=value")
+            result = subprocess.run([sys.executable, "-m", "envdiff", first, second],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("\\xff", result.stderr)
+        finally:
+            for filename in ("first.env", "second.env"):
+                path = os.path.join(directory, filename)
+                if os.path.exists(path):
+                    os.unlink(path)
+            os.rmdir(directory)
