@@ -29,3 +29,5 @@ without parsing prose.
 
 Use `envdiff --help` for the positional file arguments and `envdiff --version`
 to identify the installed command in build logs.
+
+MIT licensed.
