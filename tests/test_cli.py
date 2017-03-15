@@ -51,3 +51,18 @@ class CommandTests(unittest.TestCase):
                                 universal_newlines=True)
         self.assertEqual(result.returncode, 2)
         self.assertNotIn("missing-secret.env", result.stderr)
+
+    def test_help_describes_file_pair(self):
+        result = subprocess.run([sys.executable, "-m", "envdiff", "--help"],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("reference", result.stdout)
+        self.assertIn("target", result.stdout)
+
+    def test_version_is_available_without_files(self):
+        result = subprocess.run([sys.executable, "-m", "envdiff", "--version"],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout.strip(), "0.1.0")

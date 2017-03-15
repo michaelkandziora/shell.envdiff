@@ -23,3 +23,6 @@ Exit status is `0` for equal files, `1` for differences, and `2` for invalid inp
 Input errors are written to standard error and never include a parsed value.
 An equal comparison has no normal output, so scripts can use the exit status
 without parsing prose.
+
+Use `envdiff --help` for the positional file arguments and `envdiff --version`
+to identify the installed command in build logs.
