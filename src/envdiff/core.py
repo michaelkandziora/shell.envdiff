@@ -34,3 +34,11 @@ def compare(reference, target):
         "changed": sorted(name for name in set(reference) & set(target)
                           if reference[name] != target[name]),
     }
+
+
+def compare_targets(reference, targets):
+    """Compare every target in argument order against one unchanged reference."""
+    return [
+        {"target": ordinal, "report": compare(reference, target)}
+        for ordinal, target in enumerate(targets, 1)
+    ]

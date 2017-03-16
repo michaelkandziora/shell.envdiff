@@ -1,6 +1,6 @@
 import unittest
 
-from envdiff.core import compare, parse
+from envdiff.core import compare, compare_targets, parse
 
 
 class ParseTests(unittest.TestCase):
@@ -43,3 +43,14 @@ class CompareTests(unittest.TestCase):
 
     def test_empty_mappings_have_no_differences(self):
         self.assertEqual(compare({}, {}), {"missing": [], "extra": [], "changed": []})
+
+    def test_multiple_targets_keep_argument_ordinals(self):
+        reports = compare_targets({"A": "1"}, [{"A": "1"}, {"A": "2"}])
+        self.assertEqual([item["target"] for item in reports], [1, 2])
+        self.assertEqual(reports[0]["report"]["changed"], [])
+        self.assertEqual(reports[1]["report"]["changed"], ["A"])
+
+    def test_repeated_target_mapping_is_a_separate_comparison(self):
+        reports = compare_targets({"A": "1"}, [{"A": "2"}, {"A": "2"}])
+        self.assertEqual([item["target"] for item in reports], [1, 2])
+        self.assertEqual([item["report"]["changed"] for item in reports], [["A"], ["A"]])
