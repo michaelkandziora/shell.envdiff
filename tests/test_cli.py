@@ -69,6 +69,49 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.stdout, "TARGET 1\nTARGET 2\nCHANGED A\n")
         self.assertNotIn("input-", result.stdout + result.stderr)
 
+    def test_input_error_suppresses_earlier_target_report(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            good = os.path.join(directory, "good.env")
+            bad = os.path.join(directory, "secret-target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one")
+            with open(good, "w") as stream:
+                stream.write("A=two")
+            with open(bad, "w") as stream:
+                stream.write("NOT AN ASSIGNMENT")
+            result = subprocess.run([sys.executable, "-m", "envdiff", reference, good, bad],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("secret-target.env", result.stderr)
+            self.assertNotIn("TARGET", result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
+    def test_repeated_target_path_has_two_ordinals(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one")
+            with open(target, "w") as stream:
+                stream.write("A=two")
+            result = subprocess.run([sys.executable, "-m", "envdiff", reference, target, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "TARGET 1\nCHANGED A\nTARGET 2\nCHANGED A\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_equal_files_return_silently(self):
         result = self.run_files("A=value\n", "A=value\n")
         self.assertEqual(result.returncode, 0)
