@@ -26,3 +26,18 @@ class InstallationTests(unittest.TestCase):
             self.assertIn("usage:", result.stdout)
         finally:
             shutil.rmtree(temporary)
+
+    def test_source_distribution_contains_examples(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        temporary = tempfile.mkdtemp()
+        try:
+            subprocess.check_call([sys.executable, "setup.py", "sdist",
+                                   "--dist-dir", temporary], cwd=root)
+            archive = os.path.join(temporary, os.listdir(temporary)[0])
+            import tarfile
+            with tarfile.open(archive) as bundle:
+                names = bundle.getnames()
+            self.assertTrue(any(name.endswith("examples/reference.env") for name in names))
+            self.assertTrue(any(name.endswith("tests/test_core.py") for name in names))
+        finally:
+            shutil.rmtree(temporary)
