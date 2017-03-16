@@ -41,3 +41,11 @@ class InstallationTests(unittest.TestCase):
             self.assertTrue(any(name.endswith("tests/test_core.py") for name in names))
         finally:
             shutil.rmtree(temporary)
+
+    def test_package_metadata_identifies_project(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        result = subprocess.run([sys.executable, "setup.py", "--name", "--version"],
+                                cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.splitlines(), ["envdiff", "0.1.0"])

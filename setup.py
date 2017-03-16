@@ -7,6 +7,8 @@ setup(
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="Michael Kandziora",
+    author_email="michael@kandziora.local",
+    url="https://example.invalid/envdiff",
     license="MIT",
     package_dir={"": "src"},
     packages=["envdiff"],
