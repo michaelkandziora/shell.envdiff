@@ -25,6 +25,23 @@ class CommandTests(unittest.TestCase):
                     os.unlink(path)
             os.rmdir(directory)
 
+    def run_many(self, reference, *targets):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = []
+            for ordinal, contents in enumerate((reference,) + targets):
+                path = os.path.join(directory, "input-{0}.env".format(ordinal))
+                with open(path, "w") as stream:
+                    stream.write(contents)
+                paths.append(path)
+            return subprocess.run([sys.executable, "-m", "envdiff"] + paths,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_difference_returns_one(self):
         result = self.run_files("A=secret", "A=new")
         self.assertEqual(result.returncode, 1)
@@ -45,6 +62,12 @@ class CommandTests(unittest.TestCase):
     def test_all_categories_use_a_stable_order(self):
         result = self.run_files("Z=1\nA=1\nB=old", "Z=1\nC=1\nB=new")
         self.assertEqual(result.stdout, "MISSING A\nEXTRA C\nCHANGED B\n")
+
+    def test_multiple_targets_are_reported_by_ordinal(self):
+        result = self.run_many("A=one", "A=one", "A=two")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "TARGET 1\nTARGET 2\nCHANGED A\n")
+        self.assertNotIn("input-", result.stdout + result.stderr)
 
     def test_equal_files_return_silently(self):
         result = self.run_files("A=value\n", "A=value\n")
