@@ -7,6 +7,12 @@ class ParseTests(unittest.TestCase):
     def test_assignment(self):
         self.assertEqual(parse("A=one\n"), {"A": "one"})
 
+    def test_value_can_contain_assignment_marker(self):
+        self.assertEqual(parse("URL=a=b=c"), {"URL": "a=b=c"})
+
+    def test_final_line_need_not_end_in_newline(self):
+        self.assertEqual(parse("A=one"), {"A": "one"})
+
     def test_empty_input(self):
         self.assertEqual(parse("\n\n"), {})
 
@@ -34,3 +40,6 @@ class CompareTests(unittest.TestCase):
         report = compare({"B": "1", "A": "1"}, {"B": "1", "C": "1"})
         self.assertEqual(report["missing"], ["A"])
         self.assertEqual(report["extra"], ["C"])
+
+    def test_empty_mappings_have_no_differences(self):
+        self.assertEqual(compare({}, {}), {"missing": [], "extra": [], "changed": []})

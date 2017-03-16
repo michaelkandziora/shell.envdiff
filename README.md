@@ -5,6 +5,7 @@ Compare simple `NAME=value` files while reporting keys, never values.
 Blank lines are ignored. Each nonblank line must contain one assignment and
 duplicate keys are invalid input. Names start with a letter or underscore and
 may otherwise contain letters, digits, and underscores.
+The value is everything after the first `=`; it may itself contain `=`.
 
 Files are decoded as UTF-8. Read and decoding failures use the same safe error
 status and do not copy file contents into diagnostics.
