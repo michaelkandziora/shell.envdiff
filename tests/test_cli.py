@@ -112,6 +112,14 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_target_is_a_required_positional_argument(self):
+        result = subprocess.run([sys.executable, "-m", "envdiff", "reference.env"],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("target", result.stderr)
+
     def test_equal_files_return_silently(self):
         result = self.run_files("A=value\n", "A=value\n")
         self.assertEqual(result.returncode, 0)

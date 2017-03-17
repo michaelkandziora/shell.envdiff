@@ -38,6 +38,7 @@ class InstallationTests(unittest.TestCase):
             with tarfile.open(archive) as bundle:
                 names = bundle.getnames()
             self.assertTrue(any(name.endswith("examples/reference.env") for name in names))
+            self.assertTrue(any(name.endswith("examples/target-two.env") for name in names))
             self.assertTrue(any(name.endswith("tests/test_core.py") for name in names))
         finally:
             shutil.rmtree(temporary)

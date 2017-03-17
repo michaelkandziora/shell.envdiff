@@ -11,22 +11,33 @@ Files are decoded as UTF-8. Read and decoding failures use the same safe error
 status and do not copy file contents into diagnostics.
 
 ```sh
-envdiff reference.env target.env
+envdiff examples/reference.env examples/target.env examples/target-two.env
 ```
+
+The reference is compared unchanged with each target in argument order. A
+report for multiple targets identifies them only as `TARGET 1`, `TARGET 2`, and
+so on; input paths and values are not reported. Repeating a target path requests
+another comparison at its new ordinal.
 
 The included examples demonstrate the report without exposing either file's
 values:
 
 ```text
+TARGET 1
 MISSING REQUIRED
 EXTRA EXTRA
 CHANGED PORT
+TARGET 2
 ```
 
 Exit status is `0` for equal files, `1` for differences, and `2` for invalid input.
 Input errors are written to standard error and never include a parsed value.
 An equal comparison has no normal output, so scripts can use the exit status
 without parsing prose.
+
+At least one target is required. All sources are read before any report is
+written: an unreadable or invalid source returns status `2` and no partial
+normal report.
 
 Use `envdiff --help` for the positional file arguments and `envdiff --version`
 to identify the installed command in build logs.
