@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from . import __version__
-from .core import compare, compare_targets, parse
+from .core import compare_targets, has_differences, parse
 
 
 def main(argv=None):
@@ -23,7 +23,7 @@ def main(argv=None):
         return 2
     reports = compare_targets(reference, targets)
     _write_reports(reports)
-    return 1 if any(any(item["report"].values()) for item in reports) else 0
+    return 1 if has_differences(reports) else 0
 
 
 def _read_assignments(path):

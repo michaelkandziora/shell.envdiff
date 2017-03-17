@@ -1,6 +1,6 @@
 import unittest
 
-from envdiff.core import compare, compare_targets, parse
+from envdiff.core import compare, compare_targets, has_differences, parse
 
 
 class ParseTests(unittest.TestCase):
@@ -54,3 +54,9 @@ class CompareTests(unittest.TestCase):
         reports = compare_targets({"A": "1"}, [{"A": "2"}, {"A": "2"}])
         self.assertEqual([item["target"] for item in reports], [1, 2])
         self.assertEqual([item["report"]["changed"] for item in reports], [["A"], ["A"]])
+
+    def test_aggregate_difference_status_is_false_only_when_all_match(self):
+        matching = compare_targets({"A": "1"}, [{"A": "1"}, {"A": "1"}])
+        mixed = compare_targets({"A": "1"}, [{"A": "1"}, {"A": "2"}])
+        self.assertFalse(has_differences(matching))
+        self.assertTrue(has_differences(mixed))

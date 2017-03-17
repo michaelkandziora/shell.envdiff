@@ -42,3 +42,8 @@ def compare_targets(reference, targets):
         {"target": ordinal, "report": compare(reference, target)}
         for ordinal, target in enumerate(targets, 1)
     ]
+
+
+def has_differences(reports):
+    """Return whether any ordinal target report contains a key difference."""
+    return any(any(item["report"].values()) for item in reports)
