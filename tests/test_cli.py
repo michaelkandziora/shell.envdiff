@@ -69,6 +69,17 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.stdout, "TARGET 1\nTARGET 2\nCHANGED A\n")
         self.assertNotIn("input-", result.stdout + result.stderr)
 
+    def test_all_matching_multiple_targets_return_zero(self):
+        result = self.run_many("A=one", "A=one", "A=one", "A=one")
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "TARGET 1\nTARGET 2\nTARGET 3\n")
+
+    def test_three_targets_preserve_argument_order(self):
+        result = self.run_many("A=one", "A=two", "A=one", "A=three")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout,
+                         "TARGET 1\nCHANGED A\nTARGET 2\nTARGET 3\nCHANGED A\n")
+
     def test_input_error_suppresses_earlier_target_report(self):
         directory = tempfile.mkdtemp()
         try:
