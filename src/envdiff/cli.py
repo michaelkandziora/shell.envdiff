@@ -42,10 +42,18 @@ def _read_inputs(reference_path, target_paths):
 
 def _write_reports(reports):
     """Render complete reports only after every input was read successfully."""
+    for line in _report_lines(reports):
+        print(line)
+
+
+def _report_lines(reports):
+    """Build deterministic, key-only lines without retaining input paths."""
+    lines = []
     multiple = len(reports) > 1
     for item in reports:
         if multiple:
-            print("TARGET {0}".format(item["target"]))
+            lines.append("TARGET {0}".format(item["target"]))
         for kind in ("missing", "extra", "changed"):
             for name in item["report"][kind]:
-                print("{0} {1}".format(kind.upper(), name))
+                lines.append("{0} {1}".format(kind.upper(), name))
+    return lines

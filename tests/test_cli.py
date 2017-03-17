@@ -4,7 +4,7 @@ import sys
 import tempfile
 import unittest
 
-from envdiff.cli import _read_inputs
+from envdiff.cli import _read_inputs, _report_lines
 
 
 class CommandTests(unittest.TestCase):
@@ -149,6 +149,13 @@ class CommandTests(unittest.TestCase):
             for name in os.listdir(directory):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
+
+    def test_renderer_keeps_only_ordinal_and_keys(self):
+        reports = [{"target": 2, "report": {"missing": ["B"], "extra": [], "changed": ["A"]}}]
+        self.assertEqual(_report_lines(reports), ["MISSING B", "CHANGED A"])
+        reports.append({"target": 3, "report": {"missing": [], "extra": ["C"], "changed": []}})
+        self.assertEqual(_report_lines(reports),
+                         ["TARGET 2", "MISSING B", "CHANGED A", "TARGET 3", "EXTRA C"])
 
     def test_equal_files_return_silently(self):
         result = self.run_files("A=value\n", "A=value\n")
