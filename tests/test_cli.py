@@ -4,6 +4,8 @@ import sys
 import tempfile
 import unittest
 
+from envdiff.cli import _read_inputs
+
 
 class CommandTests(unittest.TestCase):
     def run_files(self, left, right):
@@ -130,6 +132,23 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertEqual(result.stdout, "")
         self.assertIn("target", result.stderr)
+
+    def test_loader_returns_reference_separately_from_targets(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = []
+            for ordinal, contents in enumerate(("A=reference", "A=one", "A=two")):
+                path = os.path.join(directory, "source-{0}.env".format(ordinal))
+                with open(path, "w") as stream:
+                    stream.write(contents)
+                paths.append(path)
+            reference, targets = _read_inputs(paths[0], paths[1:])
+            self.assertEqual(reference, {"A": "reference"})
+            self.assertEqual(targets, [{"A": "one"}, {"A": "two"}])
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
 
     def test_equal_files_return_silently(self):
         result = self.run_files("A=value\n", "A=value\n")

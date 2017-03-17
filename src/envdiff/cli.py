@@ -13,8 +13,7 @@ def main(argv=None):
     parser.add_argument("target", nargs="+", help="one or more files to compare")
     args = parser.parse_args(argv)
     try:
-        reference = _read_assignments(args.reference)
-        targets = [_read_assignments(path) for path in args.target]
+        reference, targets = _read_inputs(args.reference, args.target)
     except (IOError, UnicodeError):
         print("envdiff: cannot read UTF-8 input", file=sys.stderr)
         return 2
@@ -30,6 +29,15 @@ def _read_assignments(path):
     """Read a complete text input without including it in diagnostics."""
     with open(path, "r", encoding="utf-8") as stream:
         return parse(stream.read())
+
+
+def _read_inputs(reference_path, target_paths):
+    """Load all inputs before comparison so output remains atomic on failure."""
+    reference = _read_assignments(reference_path)
+    targets = []
+    for path in target_paths:
+        targets.append(_read_assignments(path))
+    return reference, targets
 
 
 def _write_reports(reports):
