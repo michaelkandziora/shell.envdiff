@@ -106,6 +106,28 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_missing_later_target_suppresses_earlier_target_report(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            good = os.path.join(directory, "good.env")
+            missing = os.path.join(directory, "private-missing.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one")
+            with open(good, "w") as stream:
+                stream.write("A=two")
+            result = subprocess.run([sys.executable, "-m", "envdiff", reference, good, missing],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("private-missing.env", result.stderr)
+            self.assertNotIn("A=two", result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_repeated_target_path_has_two_ordinals(self):
         directory = tempfile.mkdtemp()
         try:
