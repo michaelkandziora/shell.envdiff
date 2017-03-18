@@ -12,14 +12,21 @@ class InstallationTests(unittest.TestCase):
         temporary = tempfile.mkdtemp()
         try:
             wheel_directory = os.path.join(temporary, "wheel")
-            target = os.path.join(temporary, "site")
+            prefix = os.path.join(temporary, "prefix")
             subprocess.check_call([sys.executable, "setup.py", "bdist_wheel",
                                    "--dist-dir", wheel_directory], cwd=root)
             wheel = os.path.join(wheel_directory, os.listdir(wheel_directory)[0])
             subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps",
-                                   "--target", target, wheel])
-            result = subprocess.run([sys.executable, "-m", "envdiff", "--help"],
-                                    env=dict(os.environ, PYTHONPATH=target),
+                                   "--prefix", prefix, wheel])
+            site = None
+            for base, directories, files in os.walk(prefix):
+                if base.endswith("site-packages"):
+                    site = base
+            script = os.path.join(prefix, "bin", "envdiff")
+            self.assertIsNotNone(site)
+            self.assertTrue(os.path.isfile(script))
+            result = subprocess.run([script, "--help"],
+                                    env=dict(os.environ, PYTHONPATH=site),
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     universal_newlines=True)
             self.assertEqual(result.returncode, 0, result.stderr)
