@@ -155,6 +155,19 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.stdout, "")
         self.assertIn("target", result.stderr)
 
+    def test_documented_multi_target_example(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        result = subprocess.run([sys.executable, "-m", "envdiff",
+                                 os.path.join(root, "examples", "reference.env"),
+                                 os.path.join(root, "examples", "target.env"),
+                                 os.path.join(root, "examples", "target-two.env")],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout,
+                         "TARGET 1\nMISSING REQUIRED\nEXTRA EXTRA\nCHANGED PORT\nTARGET 2\n")
+        self.assertEqual(result.stderr, "")
+
     def test_loader_returns_reference_separately_from_targets(self):
         directory = tempfile.mkdtemp()
         try:
