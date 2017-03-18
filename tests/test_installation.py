@@ -17,7 +17,8 @@ class InstallationTests(unittest.TestCase):
                                    "--dist-dir", wheel_directory], cwd=root)
             wheel = os.path.join(wheel_directory, os.listdir(wheel_directory)[0])
             subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps",
-                                   "--prefix", prefix, wheel])
+                                   "--prefix", prefix, wheel],
+                                  env=dict(os.environ, PYTHONPATH=""))
             site = None
             for base, directories, files in os.walk(prefix):
                 if base.endswith("site-packages"):
