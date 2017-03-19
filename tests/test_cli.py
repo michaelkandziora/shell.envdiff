@@ -128,6 +128,27 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_invalid_reference_suppresses_every_target_report(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "private-reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("NOT AN ASSIGNMENT")
+            with open(target, "w") as stream:
+                stream.write("A=value")
+            result = subprocess.run([sys.executable, "-m", "envdiff", reference, target, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("private-reference.env", result.stderr)
+            self.assertNotIn("TARGET", result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_repeated_target_path_has_two_ordinals(self):
         directory = tempfile.mkdtemp()
         try:
