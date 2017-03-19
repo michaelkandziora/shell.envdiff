@@ -61,8 +61,8 @@ class InstallationTests(unittest.TestCase):
 
     def test_package_declares_supported_python_baseline(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        result = subprocess.run([sys.executable, "setup.py", "--requires-python"],
-                                cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                universal_newlines=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), ">=3.6")
+        subprocess.check_call([sys.executable, "setup.py", "egg_info"], cwd=root)
+        metadata = os.path.join(root, "src", "envdiff.egg-info", "PKG-INFO")
+        with open(metadata, "r") as stream:
+            contents = stream.read()
+        self.assertIn("Requires-Python: >=3.6", contents)
