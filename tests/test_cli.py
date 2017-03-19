@@ -174,7 +174,18 @@ class CommandTests(unittest.TestCase):
                                 universal_newlines=True)
         self.assertEqual(result.returncode, 2)
         self.assertEqual(result.stdout, "")
-        self.assertIn("target", result.stderr)
+        self.assertEqual(result.stderr, "envdiff: target input required\n")
+
+    def test_unknown_argument_is_not_reflected_in_diagnostic(self):
+        supplied = "--private-path=/srv/secret.env"
+        result = subprocess.run([sys.executable, "-m", "envdiff", "reference.env",
+                                 "target.env", supplied],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "envdiff: invalid command arguments\n")
+        self.assertNotIn(supplied, result.stderr)
 
     def test_documented_multi_target_example(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

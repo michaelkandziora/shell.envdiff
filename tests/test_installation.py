@@ -51,6 +51,30 @@ class InstallationTests(unittest.TestCase):
         finally:
             shutil.rmtree(temporary)
 
+    def test_fresh_source_archive_runs_documented_test_command(self):
+        if os.environ.get("ENVDIFF_ARCHIVE_SMOKE"):
+            self.skipTest("avoid recursively archiving the archive smoke")
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        temporary = tempfile.mkdtemp()
+        try:
+            subprocess.check_call([sys.executable, "setup.py", "sdist",
+                                   "--dist-dir", temporary], cwd=root)
+            archive = os.path.join(temporary, os.listdir(temporary)[0])
+            import tarfile
+            with tarfile.open(archive) as bundle:
+                bundle.extractall(temporary)
+            source = os.path.join(temporary, "envdiff-0.1.0")
+            environment = dict(os.environ, PYTHONPATH=os.path.join(source, "src"),
+                               ENVDIFF_ARCHIVE_SMOKE="1")
+            result = subprocess.run([sys.executable, "-m", "unittest", "discover",
+                                     "-s", "tests", "-v"], cwd=source, env=environment,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("OK", result.stderr)
+        finally:
+            shutil.rmtree(temporary)
+
     def test_package_metadata_identifies_project(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         result = subprocess.run([sys.executable, "setup.py", "--name", "--version"],

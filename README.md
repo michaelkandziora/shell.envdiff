@@ -42,4 +42,17 @@ normal report.
 Use `envdiff --help` for the positional file arguments and `envdiff --version`
 to identify the installed command in build logs.
 
+## Development
+
+From a source checkout, run the suite with the source package on the import
+path:
+
+```sh
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+Build distributable archives with `python3 setup.py sdist bdist_wheel`.
+Argument errors use fixed, value- and path-free diagnostics; `--help` remains
+the way to obtain usage information.
+
 MIT licensed.

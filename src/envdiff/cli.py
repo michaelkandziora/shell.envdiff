@@ -6,8 +6,17 @@ from . import __version__
 from .core import compare_targets, has_differences, parse
 
 
+class SafeArgumentParser(argparse.ArgumentParser):
+    """Keep command-line diagnostics useful without reflecting input text."""
+
+    def error(self, message):
+        if "target" in message and "required" in message:
+            self.exit(2, "envdiff: target input required\n")
+        self.exit(2, "envdiff: invalid command arguments\n")
+
+
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Compare environment-file keys.")
+    parser = SafeArgumentParser(description="Compare environment-file keys.")
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("reference")
     parser.add_argument("target", nargs="+", help="one or more files to compare")
