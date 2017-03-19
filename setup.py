@@ -12,6 +12,7 @@ setup(
     license="MIT",
     package_dir={"": "src"},
     packages=["envdiff"],
+    python_requires=">=3.6",
     entry_points={"console_scripts": ["envdiff=envdiff.cli:main"]},
     classifiers=[
         "Programming Language :: Python :: 3.6",
