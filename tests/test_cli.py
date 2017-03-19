@@ -168,6 +168,16 @@ class CommandTests(unittest.TestCase):
                          "TARGET 1\nMISSING REQUIRED\nEXTRA EXTRA\nCHANGED PORT\nTARGET 2\n")
         self.assertEqual(result.stderr, "")
 
+    def test_empty_target_contents_are_valid_multi_target_input(self):
+        result = self.run_many("A=one", "", "A=one")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "TARGET 1\nMISSING A\nTARGET 2\n")
+
+    def test_empty_reference_contents_are_valid_multi_target_input(self):
+        result = self.run_many("", "A=one", "")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "TARGET 1\nEXTRA A\nTARGET 2\n")
+
     def test_loader_returns_reference_separately_from_targets(self):
         directory = tempfile.mkdtemp()
         try:
