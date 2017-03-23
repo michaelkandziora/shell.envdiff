@@ -1,6 +1,7 @@
 import unittest
 
-from envdiff.core import compare, compare_targets, has_differences, merge_layers, parse
+from envdiff.core import (compare, compare_targets, has_differences, merge_layers,
+                          merge_layers_with_sources, parse)
 
 
 class ParseTests(unittest.TestCase):
@@ -50,6 +51,14 @@ class CompareTests(unittest.TestCase):
 
     def test_empty_layer_does_not_change_effective_mapping(self):
         self.assertEqual(merge_layers([{"A": "one"}, {}]), {"A": "one"})
+
+    def test_layer_merge_records_only_the_winning_source_metadata(self):
+        values, sources = merge_layers_with_sources([
+            ("BASE", 1, {"A": "base", "B": "one"}),
+            ("TARGET", 1, {"A": "target"}),
+        ])
+        self.assertEqual(values, {"A": "target", "B": "one"})
+        self.assertEqual(sources, {"A": ("TARGET", 1), "B": ("BASE", 1)})
 
     def test_changed_name_has_no_value(self):
         self.assertEqual(compare({"A": "one"}, {"A": "two"})["changed"], ["A"])
