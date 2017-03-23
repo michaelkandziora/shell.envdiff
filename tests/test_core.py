@@ -4,6 +4,16 @@ from envdiff.core import compare, compare_targets, has_differences, parse
 
 
 class ParseTests(unittest.TestCase):
+    def test_comment_only_lines_are_ignored(self):
+        self.assertEqual(parse("# deployment settings\nA=one\n# end\n"),
+                         {"A": "one"})
+
+    def test_assignment_whitespace_is_not_part_of_name_or_value(self):
+        self.assertEqual(parse("  A = one  \n"), {"A": "one"})
+
+    def test_export_prefix_is_accepted(self):
+        self.assertEqual(parse("export A=one\n"), {"A": "one"})
+
     def test_assignment(self):
         self.assertEqual(parse("A=one\n"), {"A": "one"})
 
