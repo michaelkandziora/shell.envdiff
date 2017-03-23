@@ -2,12 +2,17 @@
 
 
 def parse(text):
-    """Return a mapping parsed from simple NAME=value assignments."""
+    """Return a mapping parsed from the small dotenv assignment dialect."""
     values = {}
     for number, line in enumerate(text.splitlines(), 1):
-        if not line:
+        line = line.strip()
+        if not line or line.startswith("#"):
             continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
         name, marker, value = line.partition("=")
+        name = name.rstrip()
+        value = value.strip()
         if not marker:
             raise ValueError("line {0}: expected assignment".format(number))
         if not _is_name(name):
