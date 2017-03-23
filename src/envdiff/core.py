@@ -41,6 +41,14 @@ def compare(reference, target):
     }
 
 
+def merge_layers(layers):
+    """Merge mappings in source order, allowing a later source to override."""
+    effective = {}
+    for layer in layers:
+        effective.update(layer)
+    return effective
+
+
 def compare_targets(reference, targets):
     """Compare every target in argument order against one unchanged reference."""
     return [
