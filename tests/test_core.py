@@ -1,6 +1,6 @@
 import unittest
 
-from envdiff.core import compare, compare_targets, has_differences, parse
+from envdiff.core import compare, compare_targets, has_differences, merge_layers, parse
 
 
 class ParseTests(unittest.TestCase):
@@ -43,6 +43,14 @@ class ParseTests(unittest.TestCase):
 
 
 class CompareTests(unittest.TestCase):
+    def test_later_layers_override_earlier_layers(self):
+        self.assertEqual(merge_layers([{"A": "base", "B": "one"},
+                                       {"A": "target", "C": "two"}]),
+                         {"A": "target", "B": "one", "C": "two"})
+
+    def test_empty_layer_does_not_change_effective_mapping(self):
+        self.assertEqual(merge_layers([{"A": "one"}, {}]), {"A": "one"})
+
     def test_changed_name_has_no_value(self):
         self.assertEqual(compare({"A": "one"}, {"A": "two"})["changed"], ["A"])
 
