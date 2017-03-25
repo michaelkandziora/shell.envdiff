@@ -8,6 +8,27 @@ from envdiff.cli import _read_inputs, _report_lines
 
 
 class CommandTests(unittest.TestCase):
+    def test_base_is_applied_before_target_without_changing_reference(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            base = os.path.join(directory, "base.env")
+            target = os.path.join(directory, "target.env")
+            for path, contents in ((reference, "A=reference\nB=one\n"),
+                                   (base, "B=base\nC=base\n"),
+                                   (target, "A=target\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", base,
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "EXTRA C\nCHANGED A\nCHANGED B\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def run_files(self, left, right):
         directory = tempfile.mkdtemp()
         try:
