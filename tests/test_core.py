@@ -1,6 +1,6 @@
 import unittest
 
-from envdiff.core import (compare, compare_targets, has_differences, merge_layers,
+from envdiff.core import (compare, compare_effective_targets, compare_targets, has_differences, merge_layers,
                           merge_layers_with_sources, parse)
 
 
@@ -81,6 +81,11 @@ class CompareTests(unittest.TestCase):
         reports = compare_targets({"A": "1"}, [{"A": "2"}, {"A": "2"}])
         self.assertEqual([item["target"] for item in reports], [1, 2])
         self.assertEqual([item["report"]["changed"] for item in reports], [["A"], ["A"]])
+
+    def test_effective_targets_keep_reference_unchanged(self):
+        reports = compare_effective_targets({"A": "reference"},
+                                            [{"A": "base"}], [{"A": "target"}])
+        self.assertEqual(reports[0]["report"]["changed"], ["A"])
 
     def test_aggregate_difference_status_is_false_only_when_all_match(self):
         matching = compare_targets({"A": "1"}, [{"A": "1"}, {"A": "1"}])
