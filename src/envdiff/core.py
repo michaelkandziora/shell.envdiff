@@ -49,6 +49,17 @@ def merge_layers(layers):
     return effective
 
 
+def merge_layers_with_sources(layers):
+    """Merge source-tagged mappings and retain the winning source per key."""
+    effective = {}
+    sources = {}
+    for role, ordinal, layer in layers:
+        for name, value in layer.items():
+            effective[name] = value
+            sources[name] = (role, ordinal)
+    return effective, sources
+
+
 def compare_targets(reference, targets):
     """Compare every target in argument order against one unchanged reference."""
     return [
