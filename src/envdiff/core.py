@@ -68,6 +68,12 @@ def compare_targets(reference, targets):
     ]
 
 
+def compare_effective_targets(reference, bases, targets):
+    """Compare each base-then-target mapping with the untouched reference."""
+    return compare_targets(reference, [merge_layers(list(bases) + [target])
+                                       for target in targets])
+
+
 def has_differences(reports):
     """Return whether any ordinal target report contains a key difference."""
     return any(any(item["report"].values()) for item in reports)
