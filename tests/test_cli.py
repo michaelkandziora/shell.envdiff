@@ -23,7 +23,8 @@ class CommandTests(unittest.TestCase):
                                      reference, target], stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, universal_newlines=True)
             self.assertEqual(result.returncode, 1)
-            self.assertEqual(result.stdout, "EXTRA C\nCHANGED A\nCHANGED B\n")
+            self.assertEqual(result.stdout, "EXTRA C SOURCE BASE 1\n"
+                         "CHANGED A SOURCE TARGET 1\nCHANGED B SOURCE BASE 1\n")
         finally:
             for name in os.listdir(directory):
                 os.unlink(os.path.join(directory, name))
