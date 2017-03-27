@@ -87,6 +87,12 @@ class CompareTests(unittest.TestCase):
                                             [{"A": "base"}], [{"A": "target"}])
         self.assertEqual(reports[0]["report"]["changed"], ["A"])
 
+    def test_effective_target_report_keeps_winning_source_per_target_key(self):
+        reports = compare_effective_targets({"A": "one"}, [{"B": "base"}],
+                                            [{"A": "two"}])
+        self.assertEqual(reports[0]["sources"],
+                         {"A": ("TARGET", 1), "B": ("BASE", 1)})
+
     def test_aggregate_difference_status_is_false_only_when_all_match(self):
         matching = compare_targets({"A": "1"}, [{"A": "1"}, {"A": "1"}])
         mixed = compare_targets({"A": "1"}, [{"A": "1"}, {"A": "2"}])
