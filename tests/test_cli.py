@@ -53,6 +53,27 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_duplicate_name_in_one_base_is_an_input_error(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            base = os.path.join(directory, "base.env")
+            target = os.path.join(directory, "target.env")
+            for path, contents in ((reference, "A=one\n"),
+                                   (base, "B=one\nB=two\n"), (target, "A=one\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", base,
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("B=", result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def run_files(self, left, right):
         directory = tempfile.mkdtemp()
         try:
