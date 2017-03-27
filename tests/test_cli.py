@@ -29,6 +29,30 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_invalid_later_base_suppresses_all_target_reports(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            good_base = os.path.join(directory, "base-one.env")
+            bad_base = os.path.join(directory, "secret-base.env")
+            target = os.path.join(directory, "target.env")
+            for path, contents in ((reference, "A=one\n"), (good_base, "B=two\n"),
+                                   (bad_base, "INVALID"), (target, "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", good_base,
+                                     "--base", bad_base, reference, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("secret-base.env", result.stderr)
+            self.assertNotIn("A=two", result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def run_files(self, left, right):
         directory = tempfile.mkdtemp()
         try:
