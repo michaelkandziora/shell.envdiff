@@ -70,8 +70,16 @@ def compare_targets(reference, targets):
 
 def compare_effective_targets(reference, bases, targets):
     """Compare each base-then-target mapping with the untouched reference."""
-    return compare_targets(reference, [merge_layers(list(bases) + [target])
-                                       for target in targets])
+    reports = []
+    base_layers = [("BASE", ordinal, base)
+                   for ordinal, base in enumerate(bases, 1)]
+    for target_ordinal, target in enumerate(targets, 1):
+        effective, sources = merge_layers_with_sources(
+            base_layers + [("TARGET", target_ordinal, target)])
+        reports.append({"target": target_ordinal,
+                        "report": compare(reference, effective),
+                        "sources": sources})
+    return reports
 
 
 def has_differences(reports):
