@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from . import __version__
-from .core import compare_targets, has_differences, parse
+from .core import compare_effective_targets, compare_targets, has_differences, parse
 
 
 class SafeArgumentParser(argparse.ArgumentParser):
@@ -18,18 +18,22 @@ class SafeArgumentParser(argparse.ArgumentParser):
 def main(argv=None):
     parser = SafeArgumentParser(description="Compare environment-file keys.")
     parser.add_argument("--version", action="version", version=__version__)
+    parser.add_argument("--base", action="append", default=[], metavar="FILE",
+                        help="apply FILE before every target")
     parser.add_argument("reference")
     parser.add_argument("target", nargs="+", help="one or more files to compare")
     args = parser.parse_args(argv)
     try:
-        reference, targets = _read_inputs(args.reference, args.target)
+        reference, bases, targets = _read_layered_inputs(args.reference, args.base,
+                                                         args.target)
     except (IOError, UnicodeError):
         print("envdiff: cannot read UTF-8 input", file=sys.stderr)
         return 2
     except ValueError as exc:
         print("envdiff: {0}".format(exc), file=sys.stderr)
         return 2
-    reports = compare_targets(reference, targets)
+    reports = (compare_effective_targets(reference, bases, targets)
+               if bases else compare_targets(reference, targets))
     _write_reports(reports)
     return 1 if has_differences(reports) else 0
 
@@ -47,6 +51,14 @@ def _read_inputs(reference_path, target_paths):
     for path in target_paths:
         targets.append(_read_assignments(path))
     return reference, targets
+
+
+def _read_layered_inputs(reference_path, base_paths, target_paths):
+    """Load reference, bases, and targets before emitting a report."""
+    reference = _read_assignments(reference_path)
+    bases = [_read_assignments(path) for path in base_paths]
+    targets = [_read_assignments(path) for path in target_paths]
+    return reference, bases, targets
 
 
 def _write_reports(reports):
