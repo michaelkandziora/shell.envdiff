@@ -15,6 +15,13 @@ class ParseTests(unittest.TestCase):
     def test_export_prefix_is_accepted(self):
         self.assertEqual(parse("export A=one\n"), {"A": "one"})
 
+    def test_exported_name_still_participates_in_duplicate_detection(self):
+        with self.assertRaises(ValueError):
+            parse("export A=one\nA=two\n")
+
+    def test_indented_comment_is_ignored(self):
+        self.assertEqual(parse("  # note\nA=one\n"), {"A": "one"})
+
     def test_assignment(self):
         self.assertEqual(parse("A=one\n"), {"A": "one"})
 
