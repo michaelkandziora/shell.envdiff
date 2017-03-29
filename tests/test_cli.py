@@ -75,6 +75,26 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_later_base_overrides_earlier_base_with_its_own_ordinal(self):
+        directory = tempfile.mkdtemp()
+        try:
+            names = ("reference.env", "base-one.env", "base-two.env", "target.env")
+            paths = [os.path.join(directory, name) for name in names]
+            for path, contents in zip(paths, ("A=reference\n", "A=one\n", "A=two\n", "")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", paths[1],
+                                     "--base", paths[2], paths[0], paths[3]],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "CHANGED A SOURCE BASE 2\n")
+            self.assertNotIn("base-two.env", result.stdout + result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def run_files(self, left, right):
         directory = tempfile.mkdtemp()
         try:
