@@ -4,7 +4,7 @@ import sys
 import tempfile
 import unittest
 
-from envdiff.cli import _read_inputs, _report_lines
+from envdiff.cli import _read_inputs, _read_layered_inputs, _report_lines
 
 
 class CommandTests(unittest.TestCase):
@@ -327,6 +327,24 @@ class CommandTests(unittest.TestCase):
             reference, targets = _read_inputs(paths[0], paths[1:])
             self.assertEqual(reference, {"A": "reference"})
             self.assertEqual(targets, [{"A": "one"}, {"A": "two"}])
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
+    def test_layered_loader_keeps_reference_and_bases_separate(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = []
+            for ordinal, contents in enumerate(("A=reference", "A=base", "A=target")):
+                path = os.path.join(directory, "layer-{0}.env".format(ordinal))
+                with open(path, "w") as stream:
+                    stream.write(contents)
+                paths.append(path)
+            reference, bases, targets = _read_layered_inputs(paths[0], [paths[1]], [paths[2]])
+            self.assertEqual(reference, {"A": "reference"})
+            self.assertEqual(bases, [{"A": "base"}])
+            self.assertEqual(targets, [{"A": "target"}])
         finally:
             for name in os.listdir(directory):
                 os.unlink(os.path.join(directory, name))
