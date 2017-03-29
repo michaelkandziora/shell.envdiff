@@ -76,5 +76,9 @@ def _report_lines(reports):
             lines.append("TARGET {0}".format(item["target"]))
         for kind in ("missing", "extra", "changed"):
             for name in item["report"][kind]:
-                lines.append("{0} {1}".format(kind.upper(), name))
+                line = "{0} {1}".format(kind.upper(), name)
+                if "sources" in item:
+                    role, ordinal = item["sources"].get(name, ("REFERENCE", 1))
+                    line += " SOURCE {0} {1}".format(role, ordinal)
+                lines.append(line)
     return lines
