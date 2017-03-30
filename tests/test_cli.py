@@ -30,6 +30,12 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_no_base_retains_original_key_only_report(self):
+        result = self.run_files("A=one\n", "A=two\n")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "CHANGED A\n")
+        self.assertNotIn("SOURCE", result.stdout)
+
     def test_invalid_later_base_suppresses_all_target_reports(self):
         directory = tempfile.mkdtemp()
         try:
