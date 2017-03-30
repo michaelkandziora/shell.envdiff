@@ -1,9 +1,10 @@
 # envdiff
 
-Compare simple `NAME=value` files while reporting keys, never values.
+Compare dotenv-style `NAME=value` files while reporting keys, never values.
 
-Blank lines are ignored. Each nonblank line must contain one assignment and
-duplicate keys are invalid input. Names start with a letter or underscore and
+Blank lines and whole-line comments are ignored. An assignment may be preceded
+by `export`, and surrounding assignment whitespace is ignored. Each remaining
+line must contain one assignment and duplicate keys are invalid input. Names start with a letter or underscore and
 may otherwise contain letters, digits, and underscores.
 The value is everything after the first `=`; it may itself contain `=`.
 
