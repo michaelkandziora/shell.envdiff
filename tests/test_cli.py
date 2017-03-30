@@ -414,6 +414,13 @@ class CommandTests(unittest.TestCase):
         self.assertIn("reference", result.stdout)
         self.assertIn("target", result.stdout)
 
+    def test_help_describes_repeatable_base_option(self):
+        result = subprocess.run([sys.executable, "-m", "envdiff", "--help"],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--base FILE", result.stdout)
+
     def test_version_is_available_without_files(self):
         result = subprocess.run([sys.executable, "-m", "envdiff", "--version"],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
