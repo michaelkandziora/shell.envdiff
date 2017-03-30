@@ -305,6 +305,18 @@ class CommandTests(unittest.TestCase):
                          "TARGET 1\nMISSING REQUIRED\nEXTRA EXTRA\nCHANGED PORT\nTARGET 2\n")
         self.assertEqual(result.stderr, "")
 
+    def test_documented_base_example_runs_without_leaking_example_path(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        result = subprocess.run([sys.executable, "-m", "envdiff", "--base",
+                                 os.path.join(root, "examples", "base.env"),
+                                 os.path.join(root, "examples", "reference.env"),
+                                 os.path.join(root, "examples", "target.env")],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("SOURCE BASE 1", result.stdout)
+        self.assertNotIn("base.env", result.stdout + result.stderr)
+
     def test_empty_target_contents_are_valid_multi_target_input(self):
         result = self.run_many("A=one", "", "A=one")
         self.assertEqual(result.returncode, 1)
