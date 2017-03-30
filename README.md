@@ -20,6 +20,17 @@ report for multiple targets identifies them only as `TARGET 1`, `TARGET 2`, and
 so on; input paths and values are not reported. Repeating a target path requests
 another comparison at its new ordinal.
 
+Use a repeated `--base FILE` to compose each target from common files. Bases
+are applied from left to right and the target is applied last; the reference is
+never part of that merge. A duplicate key inside one source is invalid, while a
+later source may replace a key from an earlier base. Layered difference lines
+add only `SOURCE BASE 1`, `SOURCE TARGET 2`, or `SOURCE REFERENCE 1` metadata;
+they never show a source path or a value.
+
+```sh
+envdiff --base examples/base.env examples/reference.env examples/target.env
+```
+
 The included examples demonstrate the report without exposing either file's
 values:
 
