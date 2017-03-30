@@ -36,6 +36,25 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.stdout, "CHANGED A\n")
         self.assertNotIn("SOURCE", result.stdout)
 
+    def test_layered_multiple_targets_retain_target_ordinals(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, "source-{0}.env".format(number))
+                     for number in range(4)]
+            for path, contents in zip(paths, ("A=one\n", "B=base\n", "A=two\n", "A=one\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", paths[1],
+                                     paths[0], paths[2], paths[3]], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "TARGET 1\nEXTRA B SOURCE BASE 1\n"
+                             "CHANGED A SOURCE TARGET 1\nTARGET 2\nEXTRA B SOURCE BASE 1\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_invalid_later_base_suppresses_all_target_reports(self):
         directory = tempfile.mkdtemp()
         try:
