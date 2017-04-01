@@ -46,6 +46,7 @@ class InstallationTests(unittest.TestCase):
             with tarfile.open(archive) as bundle:
                 names = bundle.getnames()
             self.assertTrue(any(name.endswith("examples/reference.env") for name in names))
+            self.assertTrue(any(name.endswith("examples/base.env") for name in names))
             self.assertTrue(any(name.endswith("examples/target-two.env") for name in names))
             self.assertTrue(any(name.endswith("tests/test_core.py") for name in names))
         finally:
@@ -63,7 +64,7 @@ class InstallationTests(unittest.TestCase):
             import tarfile
             with tarfile.open(archive) as bundle:
                 bundle.extractall(temporary)
-            source = os.path.join(temporary, "envdiff-0.1.0")
+            source = os.path.join(temporary, "envdiff-0.2.0")
             environment = dict(os.environ, PYTHONPATH=os.path.join(source, "src"),
                                ENVDIFF_ARCHIVE_SMOKE="1")
             result = subprocess.run([sys.executable, "-m", "unittest", "discover",
@@ -81,7 +82,7 @@ class InstallationTests(unittest.TestCase):
                                 cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 universal_newlines=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.splitlines(), ["envdiff", "0.1.0"])
+        self.assertEqual(result.stdout.splitlines(), ["envdiff", "0.2.0"])
 
     def test_package_declares_supported_python_baseline(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
