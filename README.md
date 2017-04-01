@@ -48,8 +48,9 @@ An equal comparison has no normal output, so scripts can use the exit status
 without parsing prose.
 
 At least one target is required. All sources are read before any report is
-written: an unreadable or invalid source returns status `2` and no partial
-normal report.
+written: an unreadable or invalid reference, base, or target returns status `2`
+and no partial normal report. Invalid command arguments use a fixed diagnostic,
+so command input is not copied to standard error.
 
 Use `envdiff --help` for the positional file arguments and `envdiff --version`
 to identify the installed command in build logs.
