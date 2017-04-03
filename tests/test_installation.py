@@ -7,6 +7,35 @@ import unittest
 
 
 class InstallationTests(unittest.TestCase):
+    def test_built_wheel_console_command_accepts_base_option(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        temporary = tempfile.mkdtemp()
+        try:
+            wheel_directory = os.path.join(temporary, "wheel")
+            prefix = os.path.join(temporary, "prefix")
+            subprocess.check_call([sys.executable, "setup.py", "bdist_wheel",
+                                   "--dist-dir", wheel_directory], cwd=root)
+            wheel = os.path.join(wheel_directory, os.listdir(wheel_directory)[0])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps",
+                                   "--prefix", prefix, wheel], env=dict(os.environ, PYTHONPATH=""))
+            base = os.path.join(temporary, "base.env")
+            reference = os.path.join(temporary, "reference.env")
+            target = os.path.join(temporary, "target.env")
+            for path, contents in ((base, "A=base\n"), (reference, "A=reference\n"),
+                                   (target, "")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            script = os.path.join(prefix, "bin", "envdiff")
+            site = next(directory for directory, _, _ in os.walk(prefix)
+                        if directory.endswith("site-packages"))
+            result = subprocess.run([script, "--base", base, reference, target],
+                                    env=dict(os.environ, PYTHONPATH=site), stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "CHANGED A SOURCE BASE 1\n")
+        finally:
+            shutil.rmtree(temporary)
+
     def test_built_wheel_provides_console_command(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         temporary = tempfile.mkdtemp()
