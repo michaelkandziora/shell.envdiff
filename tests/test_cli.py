@@ -138,6 +138,27 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_repeated_base_path_is_applied_at_each_base_ordinal(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            base = os.path.join(directory, "base.env")
+            target = os.path.join(directory, "target.env")
+            for path, contents in ((reference, "A=reference\n"), (base, "A=base\n"),
+                                   (target, "")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", base,
+                                     "--base", base, reference, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "CHANGED A SOURCE BASE 2\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def run_files(self, left, right):
         directory = tempfile.mkdtemp()
         try:
