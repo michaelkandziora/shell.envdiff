@@ -7,6 +7,29 @@ import unittest
 
 
 class InstallationTests(unittest.TestCase):
+    def test_source_distribution_installs_console_command(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        temporary = tempfile.mkdtemp()
+        try:
+            subprocess.check_call([sys.executable, "setup.py", "sdist",
+                                   "--dist-dir", temporary], cwd=root)
+            archive = os.path.join(temporary, os.listdir(temporary)[0])
+            prefix = os.path.join(temporary, "prefix")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps",
+                                   "--prefix", prefix, archive],
+                                  env=dict(os.environ, PYTHONPATH=""))
+            site = next(directory for directory, _, _ in os.walk(prefix)
+                        if directory.endswith("site-packages"))
+            script = os.path.join(prefix, "bin", "envdiff")
+            result = subprocess.run([script, "--version"],
+                                    env=dict(os.environ, PYTHONPATH=site),
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "0.2.0")
+        finally:
+            shutil.rmtree(temporary)
+
     def test_built_wheel_console_command_accepts_base_option(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         temporary = tempfile.mkdtemp()
