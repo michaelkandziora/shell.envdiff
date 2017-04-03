@@ -100,6 +100,29 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_base_parse_diagnostic_does_not_reflect_assignment_value(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            base = os.path.join(directory, "base.env")
+            target = os.path.join(directory, "target.env")
+            for path, contents in ((reference, "A=one\n"),
+                                   (base, "BROKEN=confidential\nBROKEN=hidden\n"),
+                                   (target, "A=one\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", base,
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("confidential", result.stderr)
+            self.assertNotIn("hidden", result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_later_base_overrides_earlier_base_with_its_own_ordinal(self):
         directory = tempfile.mkdtemp()
         try:
