@@ -41,6 +41,14 @@ class ParseTests(unittest.TestCase):
     def test_utf8_bom_and_crlf_are_normalized_before_assignments(self):
         self.assertEqual(parse("\ufeffA=one\r\nB=two\r\n"), {"A": "one", "B": "two"})
 
+    def test_unterminated_quote_is_a_controlled_parse_error(self):
+        with self.assertRaises(ValueError):
+            parse('A="unfinished\n')
+
+    def test_text_after_closed_quote_is_a_controlled_parse_error(self):
+        with self.assertRaises(ValueError):
+            parse('A="one" trailing\n')
+
     def test_assignment(self):
         self.assertEqual(parse("A=one\n"), {"A": "one"})
 
