@@ -22,6 +22,16 @@ class ParseTests(unittest.TestCase):
     def test_indented_comment_is_ignored(self):
         self.assertEqual(parse("  # note\nA=one\n"), {"A": "one"})
 
+    def test_double_quoted_value_can_contain_spaces_and_markers(self):
+        self.assertEqual(parse('A="one = # two"\n'), {"A": "one = # two"})
+
+    def test_single_quoted_value_can_contain_comment_marker(self):
+        self.assertEqual(parse("A='one # two'\n"), {"A": "one # two"})
+
+    def test_unquoted_inline_comment_requires_a_whitespace_boundary(self):
+        self.assertEqual(parse("A=one # note\nB=two#kept\n"),
+                         {"A": "one", "B": "two#kept"})
+
     def test_assignment(self):
         self.assertEqual(parse("A=one\n"), {"A": "one"})
 
