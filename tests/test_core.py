@@ -32,6 +32,15 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(parse("A=one # note\nB=two#kept\n"),
                          {"A": "one", "B": "two#kept"})
 
+    def test_known_escapes_are_decoded_inside_quotes(self):
+        self.assertEqual(parse('A="one\\ntwo\\tend"\n'), {"A": "one\ntwo\tend"})
+
+    def test_unknown_escape_is_preserved_inside_quotes(self):
+        self.assertEqual(parse('A="one\\qtwo"\n'), {"A": "one\\qtwo"})
+
+    def test_utf8_bom_and_crlf_are_normalized_before_assignments(self):
+        self.assertEqual(parse("\ufeffA=one\r\nB=two\r\n"), {"A": "one", "B": "two"})
+
     def test_assignment(self):
         self.assertEqual(parse("A=one\n"), {"A": "one"})
 
