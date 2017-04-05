@@ -49,6 +49,24 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_bom_and_crlf_are_consistent_for_layered_sources(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, "encoded-{0}.env".format(number))
+                     for number in range(3)]
+            for path, contents in zip(paths, ("\ufeffA=one\r\n", "B=base\r\n", "A=one\r\n")):
+                with open(path, "w", newline="") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", paths[1],
+                                     paths[0], paths[2]], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "EXTRA B SOURCE BASE 1\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_no_base_retains_original_key_only_report(self):
         result = self.run_files("A=one\n", "A=two\n")
         self.assertEqual(result.returncode, 1)
