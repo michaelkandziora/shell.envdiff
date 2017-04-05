@@ -7,6 +7,10 @@ by `export`, and surrounding assignment whitespace is ignored. Each remaining
 line must contain one assignment and duplicate keys are invalid input. Names start with a letter or underscore and
 may otherwise contain letters, digits, and underscores.
 The value is everything after the first `=`; it may itself contain `=`.
+Single- and double-quoted values preserve spaces and `#` markers. Within a
+quoted value, `\\n`, `\\r`, `\\t`, a quoted delimiter, and `\\\\` are decoded;
+unknown escapes remain unchanged. An unquoted `#` starts a comment only after
+whitespace. UTF-8 BOMs and CRLF line endings are accepted consistently.
 
 Files are decoded as UTF-8. Read and decoding failures use the same safe error
 status and do not copy file contents into diagnostics.
