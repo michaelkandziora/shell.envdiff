@@ -11,6 +11,7 @@ Single- and double-quoted values preserve spaces and `#` markers. Within a
 quoted value, `\\n`, `\\r`, `\\t`, a quoted delimiter, and `\\\\` are decoded;
 unknown escapes remain unchanged. An unquoted `#` starts a comment only after
 whitespace. UTF-8 BOMs and CRLF line endings are accepted consistently.
+`examples/quoted.env` contains syntax-only quoted assignments for inspection.
 
 Files are decoded as UTF-8. Read and decoding failures use the same safe error
 status and do not copy file contents into diagnostics.
