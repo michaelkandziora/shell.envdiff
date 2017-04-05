@@ -266,6 +266,12 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertEqual(result.stdout, "")
 
+    def test_unterminated_quote_has_a_value_free_diagnostic(self):
+        result = self.run_files('A="private unfinished', "A=value")
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertNotIn("private", result.stderr)
+
     def test_invalid_name_is_not_reflected_in_error_output(self):
         result = self.run_files("BAD NAME=private", "A=value")
         self.assertEqual(result.returncode, 2)
