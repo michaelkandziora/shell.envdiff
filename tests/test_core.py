@@ -44,6 +44,9 @@ class ParseTests(unittest.TestCase):
     def test_closed_quote_allows_only_a_comment_suffix(self):
         self.assertEqual(parse('A="one" # note\n'), {"A": "one"})
 
+    def test_empty_quoted_value_is_distinct_valid_syntax(self):
+        self.assertEqual(parse('A=""\nB=\'\'\n'), {"A": "", "B": ""})
+
     def test_utf8_bom_and_crlf_are_normalized_before_assignments(self):
         self.assertEqual(parse("\ufeffA=one\r\nB=two\r\n"), {"A": "one", "B": "two"})
 
