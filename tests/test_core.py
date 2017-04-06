@@ -50,6 +50,9 @@ class ParseTests(unittest.TestCase):
     def test_escaped_backslash_is_decoded_inside_quotes(self):
         self.assertEqual(parse('A="one\\\\two"\n'), {"A": "one\\two"})
 
+    def test_bom_is_removed_only_at_start_of_a_source(self):
+        self.assertEqual(parse("A=one\nB=\ufefftwo\n"), {"A": "one", "B": "\ufefftwo"})
+
     def test_utf8_bom_and_crlf_are_normalized_before_assignments(self):
         self.assertEqual(parse("\ufeffA=one\r\nB=two\r\n"), {"A": "one", "B": "two"})
 
