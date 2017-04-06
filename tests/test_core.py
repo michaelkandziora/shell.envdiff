@@ -47,6 +47,9 @@ class ParseTests(unittest.TestCase):
     def test_empty_quoted_value_is_distinct_valid_syntax(self):
         self.assertEqual(parse('A=""\nB=\'\'\n'), {"A": "", "B": ""})
 
+    def test_escaped_backslash_is_decoded_inside_quotes(self):
+        self.assertEqual(parse('A="one\\\\two"\n'), {"A": "one\\two"})
+
     def test_utf8_bom_and_crlf_are_normalized_before_assignments(self):
         self.assertEqual(parse("\ufeffA=one\r\nB=two\r\n"), {"A": "one", "B": "two"})
 
