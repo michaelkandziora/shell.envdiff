@@ -99,6 +99,7 @@ class InstallationTests(unittest.TestCase):
                 names = bundle.getnames()
             self.assertTrue(any(name.endswith("examples/reference.env") for name in names))
             self.assertTrue(any(name.endswith("examples/base.env") for name in names))
+            self.assertTrue(any(name.endswith("examples/quoted.env") for name in names))
             self.assertTrue(any(name.endswith("examples/target-two.env") for name in names))
             self.assertTrue(any(name.endswith("tests/test_core.py") for name in names))
         finally:
