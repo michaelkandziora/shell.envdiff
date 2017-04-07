@@ -56,6 +56,9 @@ class ParseTests(unittest.TestCase):
     def test_quoted_value_can_contain_assignment_markers(self):
         self.assertEqual(parse('A="left=right=final"\n'), {"A": "left=right=final"})
 
+    def test_exported_quoted_value_uses_same_decoding_rules(self):
+        self.assertEqual(parse('export A="one\\ttwo"\n'), {"A": "one\ttwo"})
+
     def test_utf8_bom_and_crlf_are_normalized_before_assignments(self):
         self.assertEqual(parse("\ufeffA=one\r\nB=two\r\n"), {"A": "one", "B": "two"})
 
