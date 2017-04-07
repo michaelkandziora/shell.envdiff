@@ -112,6 +112,11 @@ class CompareTests(unittest.TestCase):
     def test_changed_name_has_no_value(self):
         self.assertEqual(compare({"A": "one"}, {"A": "two"})["changed"], ["A"])
 
+    def test_equivalent_escaped_and_literal_values_do_not_change_key(self):
+        reference = parse('A="one\\ntwo"\n')
+        target = {"A": "one\ntwo"}
+        self.assertEqual(compare(reference, target)["changed"], [])
+
     def test_missing_and_extra_are_sorted(self):
         report = compare({"B": "1", "A": "1"}, {"B": "1", "C": "1"})
         self.assertEqual(report["missing"], ["A"])
