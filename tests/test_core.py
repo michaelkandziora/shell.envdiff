@@ -53,6 +53,9 @@ class ParseTests(unittest.TestCase):
     def test_bom_is_removed_only_at_start_of_a_source(self):
         self.assertEqual(parse("A=one\nB=\ufefftwo\n"), {"A": "one", "B": "\ufefftwo"})
 
+    def test_quoted_value_can_contain_assignment_markers(self):
+        self.assertEqual(parse('A="left=right=final"\n'), {"A": "left=right=final"})
+
     def test_utf8_bom_and_crlf_are_normalized_before_assignments(self):
         self.assertEqual(parse("\ufeffA=one\r\nB=two\r\n"), {"A": "one", "B": "two"})
 
