@@ -5,6 +5,7 @@ def parse(text):
     """Return a mapping parsed from the small dotenv assignment dialect."""
     if text.startswith("\ufeff"):
         text = text[1:]
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
     values = {}
     for number, line in enumerate(text.splitlines(), 1):
         line = line.strip()
