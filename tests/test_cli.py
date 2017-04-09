@@ -67,6 +67,25 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_quoted_target_override_retains_target_provenance(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, "override-{0}.env".format(number))
+                     for number in range(3)]
+            for path, contents in zip(paths, ('A="reference"\n', 'A="base"\n',
+                                              'A="target"\n')):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", paths[1],
+                                     paths[0], paths[2]], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "CHANGED A SOURCE TARGET 1\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_no_base_retains_original_key_only_report(self):
         result = self.run_files("A=one\n", "A=two\n")
         self.assertEqual(result.returncode, 1)
