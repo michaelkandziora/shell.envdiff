@@ -70,6 +70,10 @@ class ParseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse('A="one" trailing\n')
 
+    def test_trailing_escape_is_an_unterminated_quoted_value(self):
+        with self.assertRaises(ValueError):
+            parse('A="one\\\\\n')
+
     def test_assignment(self):
         self.assertEqual(parse("A=one\n"), {"A": "one"})
 
