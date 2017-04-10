@@ -454,6 +454,17 @@ class CommandTests(unittest.TestCase):
         self.assertIn("SOURCE BASE 1", result.stdout)
         self.assertNotIn("base.env", result.stdout + result.stderr)
 
+    def test_documented_quoted_example_is_an_equal_comparison(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        result = subprocess.run([sys.executable, "-m", "envdiff",
+                                 os.path.join(root, "examples", "quoted-reference.env"),
+                                 os.path.join(root, "examples", "quoted-target.env")],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "")
+
     def test_empty_target_contents_are_valid_multi_target_input(self):
         result = self.run_many("A=one", "", "A=one")
         self.assertEqual(result.returncode, 1)
