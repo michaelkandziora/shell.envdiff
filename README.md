@@ -13,6 +13,10 @@ unknown escapes remain unchanged. An unquoted `#` starts a comment only after
 whitespace. UTF-8 BOMs and CRLF line endings are accepted consistently.
 `examples/quoted.env` contains syntax-only quoted assignments for inspection.
 
+```sh
+envdiff examples/quoted-reference.env examples/quoted-target.env
+```
+
 Files are decoded as UTF-8. Read and decoding failures use the same safe error
 status and do not copy file contents into diagnostics.
 
