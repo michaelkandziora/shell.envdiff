@@ -116,6 +116,12 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(filtered[0]["report"],
                          {"missing": ["A"], "extra": [], "changed": ["C"]})
 
+    def test_exclude_wins_when_include_and_exclude_overlap(self):
+        reports = [{"target": 1, "report": {"missing": [], "extra": [],
+                                              "changed": ["APP_PORT", "APP_TOKEN"]}}]
+        filtered = filter_reports(reports, includes=["APP_*"], excludes=["*_TOKEN"])
+        self.assertEqual(filtered[0]["report"]["changed"], ["APP_PORT"])
+
     def test_later_layers_override_earlier_layers(self):
         self.assertEqual(merge_layers([{"A": "base", "B": "one"},
                                        {"A": "target", "C": "two"}]),
