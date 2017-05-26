@@ -1,6 +1,6 @@
 import unittest
 
-from envdiff.core import (compare, compare_effective_targets, compare_targets, has_differences, merge_layers,
+from envdiff.core import (compare, compare_effective_targets, compare_targets, filter_reports, has_differences, merge_layers,
                           merge_layers_with_sources, parse)
 
 
@@ -109,6 +109,13 @@ class ParseTests(unittest.TestCase):
 
 
 class CompareTests(unittest.TestCase):
+    def test_include_filters_completed_difference_keys(self):
+        reports = [{"target": 1, "report": {"missing": ["A"], "extra": ["B"],
+                                              "changed": ["C"]}}]
+        filtered = filter_reports(reports, includes=["A", "C"])
+        self.assertEqual(filtered[0]["report"],
+                         {"missing": ["A"], "extra": [], "changed": ["C"]})
+
     def test_later_layers_override_earlier_layers(self):
         self.assertEqual(merge_layers([{"A": "base", "B": "one"},
                                        {"A": "target", "C": "two"}]),
