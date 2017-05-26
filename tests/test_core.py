@@ -1,6 +1,6 @@
 import unittest
 
-from envdiff.core import (compare, compare_effective_targets, compare_targets, filter_reports, has_differences, merge_layers,
+from envdiff.core import (compare, compare_effective_targets, compare_targets, filter_reports, has_differences, key_set_reports, merge_layers,
                           merge_layers_with_sources, parse)
 
 
@@ -121,6 +121,12 @@ class CompareTests(unittest.TestCase):
                                               "changed": ["APP_PORT", "APP_TOKEN"]}}]
         filtered = filter_reports(reports, includes=["APP_*"], excludes=["*_TOKEN"])
         self.assertEqual(filtered[0]["report"]["changed"], ["APP_PORT"])
+
+    def test_key_set_mode_ignores_only_changed_values(self):
+        reports = [{"target": 1, "report": {"missing": ["A"], "extra": ["B"],
+                                              "changed": ["C"]}}]
+        self.assertEqual(key_set_reports(reports)[0]["report"],
+                         {"missing": ["A"], "extra": ["B"], "changed": []})
 
     def test_later_layers_override_earlier_layers(self):
         self.assertEqual(merge_layers([{"A": "base", "B": "one"},
