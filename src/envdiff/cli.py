@@ -3,7 +3,8 @@ import argparse
 import sys
 
 from . import __version__
-from .core import compare_effective_targets, compare_targets, has_differences, parse
+from .core import (compare_effective_targets, compare_targets, filter_reports,
+                   has_differences, parse)
 
 
 class SafeArgumentParser(argparse.ArgumentParser):
@@ -20,6 +21,10 @@ def main(argv=None):
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("--base", action="append", default=[], metavar="FILE",
                         help="apply FILE before every target")
+    parser.add_argument("--include", action="append", default=[], metavar="GLOB",
+                        help="report only matching keys")
+    parser.add_argument("--exclude", action="append", default=[], metavar="GLOB",
+                        help="omit matching keys")
     parser.add_argument("reference")
     parser.add_argument("target", nargs="+", help="one or more files to compare")
     args = parser.parse_args(argv)
@@ -34,6 +39,7 @@ def main(argv=None):
         return 2
     reports = (compare_effective_targets(reference, bases, targets)
                if bases else compare_targets(reference, targets))
+    reports = filter_reports(reports, args.include, args.exclude)
     _write_reports(reports)
     return 1 if has_differences(reports) else 0
 
