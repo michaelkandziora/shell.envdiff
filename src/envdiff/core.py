@@ -1,4 +1,5 @@
 """The initial NAME=value parser and key comparison primitives."""
+import fnmatch
 
 
 def parse(text):
@@ -123,3 +124,23 @@ def compare_effective_targets(reference, bases, targets):
 def has_differences(reports):
     """Return whether any ordinal target report contains a key difference."""
     return any(any(item["report"].values()) for item in reports)
+
+
+def filter_reports(reports, includes=(), excludes=()):
+    """Return completed reports narrowed by key globs; exclusions win."""
+    result = []
+    for item in reports:
+        filtered = {}
+        for kind, names in item["report"].items():
+            filtered[kind] = [name for name in names
+                              if _is_selected(name, includes, excludes)]
+        copied = dict(item)
+        copied["report"] = filtered
+        result.append(copied)
+    return result
+
+
+def _is_selected(name, includes, excludes):
+    if includes and not any(fnmatch.fnmatchcase(name, pattern) for pattern in includes):
+        return False
+    return not any(fnmatch.fnmatchcase(name, pattern) for pattern in excludes)
