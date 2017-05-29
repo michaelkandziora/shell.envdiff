@@ -4,7 +4,7 @@ import sys
 
 from . import __version__
 from .core import (compare_effective_targets, compare_targets, filter_reports,
-                   has_differences, parse)
+                   has_differences, key_set_reports, parse)
 
 
 class SafeArgumentParser(argparse.ArgumentParser):
@@ -25,6 +25,8 @@ def main(argv=None):
                         help="report only matching keys")
     parser.add_argument("--exclude", action="append", default=[], metavar="GLOB",
                         help="omit matching keys")
+    parser.add_argument("--keys-only", action="store_true",
+                        help="ignore value-only differences")
     parser.add_argument("reference")
     parser.add_argument("target", nargs="+", help="one or more files to compare")
     args = parser.parse_args(argv)
@@ -40,6 +42,8 @@ def main(argv=None):
     reports = (compare_effective_targets(reference, bases, targets)
                if bases else compare_targets(reference, targets))
     reports = filter_reports(reports, args.include, args.exclude)
+    if args.keys_only:
+        reports = key_set_reports(reports)
     _write_reports(reports)
     return 1 if has_differences(reports) else 0
 
