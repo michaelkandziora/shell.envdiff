@@ -31,9 +31,9 @@ def _parse_value(value, number):
     """Parse a simple quoted value or an unquoted value with a comment boundary."""
     if value[:1] in ("'", '"'):
         return _quoted_value(value, number)
-    marker = value.find(" #")
-    if marker != -1:
-        return value[:marker].rstrip()
+    for marker, character in enumerate(value):
+        if character == "#" and marker and value[marker - 1].isspace():
+            return value[:marker].rstrip()
     return value
 
 

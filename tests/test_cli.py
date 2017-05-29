@@ -67,6 +67,24 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_tab_inline_comment_is_consistent_in_layered_base_input(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, "tab-{0}.env".format(number))
+                     for number in range(3)]
+            for path, contents in zip(paths, ("A=one\n", "B=base\t# note\n", "A=one\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", paths[1],
+                                     paths[0], paths[2]], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "EXTRA B SOURCE BASE 1\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_quoted_target_override_retains_target_provenance(self):
         directory = tempfile.mkdtemp()
         try:

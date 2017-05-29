@@ -32,6 +32,10 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(parse("A=one # note\nB=two#kept\n"),
                          {"A": "one", "B": "two#kept"})
 
+    def test_unquoted_inline_comment_accepts_tab_whitespace_boundary(self):
+        self.assertEqual(parse("A=one\t# note\nB=two#kept\n"),
+                         {"A": "one", "B": "two#kept"})
+
     def test_known_escapes_are_decoded_inside_quotes(self):
         self.assertEqual(parse('A="one\\ntwo\\tend"\n'), {"A": "one\ntwo\tend"})
 
