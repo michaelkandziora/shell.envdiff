@@ -299,6 +299,45 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_keys_only_ignores_changed_values_but_keeps_key_set_differences(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            for path, contents in ((reference, "A=one\nB=one\n"),
+                                   (target, "A=two\nC=one\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--keys-only",
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "MISSING B\nEXTRA C\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
+    def test_keys_only_returns_zero_when_only_values_change(self):
+        result = self.run_files("A=one\n", "A=two\n")
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--keys-only",
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_invalid_input_returns_two(self):
         result = self.run_files("A", "A=value")
         self.assertEqual(result.returncode, 2)
