@@ -1,4 +1,5 @@
 import os
+import signal
 import shutil
 import subprocess
 import sys
@@ -6,7 +7,33 @@ import tempfile
 import unittest
 
 
+def _run_owned_test_command(command, cwd, environment):
+    """Run one archive test command in an owned process group."""
+    process = subprocess.Popen(command, cwd=cwd, env=environment,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               universal_newlines=True, start_new_session=True)
+    try:
+        stdout, stderr = process.communicate(timeout=45)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGTERM)
+        stdout, stderr = process.communicate()
+        return 124, stdout, stderr
+    return process.returncode, stdout, stderr
+
+
 class InstallationTests(unittest.TestCase):
+    def test_archive_smoke_marker_stops_nested_archive_runner(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        environment = dict(os.environ, PYTHONPATH=os.path.join(root, "src"),
+                           ENVDIFF_ARCHIVE_SMOKE="1")
+        result = subprocess.run([sys.executable, "-m", "unittest",
+                                 "tests.test_installation.InstallationTests."
+                                 "test_fresh_source_archive_runs_documented_test_command", "-v"],
+                                cwd=root, env=environment, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, universal_newlines=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("skipped", result.stderr)
+
     def test_source_distribution_installs_console_command(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         temporary = tempfile.mkdtemp()
@@ -107,9 +134,7 @@ class InstallationTests(unittest.TestCase):
         finally:
             shutil.rmtree(temporary)
 
-    def test_fresh_source_archive_runs_documented_test_command(self):
-        if os.environ.get("ENVDIFF_ARCHIVE_SMOKE"):
-            self.skipTest("avoid recursively archiving the archive smoke")
+    def test_fresh_source_archive_runs_core_and_cli_tests(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         temporary = tempfile.mkdtemp()
         try:
@@ -120,14 +145,13 @@ class InstallationTests(unittest.TestCase):
             with tarfile.open(archive) as bundle:
                 bundle.extractall(temporary)
             source = os.path.join(temporary, "envdiff-0.3.0")
-            environment = dict(os.environ, PYTHONPATH=os.path.join(source, "src"),
-                               ENVDIFF_ARCHIVE_SMOKE="1")
-            result = subprocess.run([sys.executable, "-m", "unittest", "discover",
-                                     "-s", "tests", "-v"], cwd=source, env=environment,
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    universal_newlines=True)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("OK", result.stderr)
+            environment = dict(os.environ, PYTHONPATH=os.path.join(source, "src"))
+            for pattern in ("test_core.py", "test_cli.py"):
+                status, stdout, stderr = _run_owned_test_command(
+                    [sys.executable, "-m", "unittest", "discover", "-s", "tests",
+                     "-p", pattern, "-v"], source, environment)
+                self.assertEqual(status, 0, stdout + stderr)
+                self.assertIn("OK", stderr)
         finally:
             shutil.rmtree(temporary)
 
