@@ -140,6 +140,18 @@ def filter_reports(reports, includes=(), excludes=()):
     return result
 
 
+def key_set_reports(reports):
+    """Project completed reports onto key-set differences only."""
+    result = []
+    for item in reports:
+        copied = dict(item)
+        report = dict(item["report"])
+        report["changed"] = []
+        copied["report"] = report
+        result.append(copied)
+    return result
+
+
 def _is_selected(name, includes, excludes):
     if includes and not any(fnmatch.fnmatchcase(name, pattern) for pattern in includes):
         return False
