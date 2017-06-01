@@ -356,6 +356,45 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_exclude_option_wins_over_include_option(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("APP_PORT=one\nAPP_TOKEN=one\n")
+            with open(target, "w") as stream:
+                stream.write("APP_PORT=two\nAPP_TOKEN=two\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--include", "APP_*",
+                                     "--exclude", "*_TOKEN", reference, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "CHANGED APP_PORT\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
+    def test_filtered_out_difference_returns_zero_without_output(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--exclude", "*",
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_invalid_input_returns_two(self):
         result = self.run_files("A", "A=value")
         self.assertEqual(result.returncode, 2)
