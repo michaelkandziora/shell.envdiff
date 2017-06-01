@@ -64,6 +64,18 @@ so command input is not copied to standard error.
 Use `envdiff --help` for the positional file arguments and `envdiff --version`
 to identify the installed command in build logs.
 
+## Selecting keys
+
+Repeat `--include GLOB` to select report keys and `--exclude GLOB` to remove
+them; exclusions win when patterns overlap. Filtering occurs after every input
+has been parsed, layered, and compared, so an invalid source still returns
+status `2` even when its differences would not be selected. If no difference
+remains selected, the command returns `0` without normal output.
+
+`--keys-only` is a comparison mode: it ignores changed values while retaining
+missing and extra keys. It is not a redaction switch—normal reports already
+never print values.
+
 ## Development
 
 From a source checkout, run the suite with the source package on the import
