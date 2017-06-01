@@ -126,6 +126,17 @@ class CompareTests(unittest.TestCase):
         filtered = filter_reports(reports, includes=["APP_*"], excludes=["*_TOKEN"])
         self.assertEqual(filtered[0]["report"]["changed"], ["APP_PORT"])
 
+    def test_repeated_includes_select_union_without_duplicate_keys(self):
+        reports = [{"target": 1, "report": {"missing": [], "extra": [],
+                                              "changed": ["APP_PORT", "DB_PORT"]}}]
+        filtered = filter_reports(reports, includes=["APP_*", "*_PORT"])
+        self.assertEqual(filtered[0]["report"]["changed"], ["APP_PORT", "DB_PORT"])
+
+    def test_filtering_every_difference_makes_status_equal(self):
+        reports = [{"target": 1, "report": {"missing": [], "extra": [],
+                                              "changed": ["TOKEN"]}}]
+        self.assertFalse(has_differences(filter_reports(reports, excludes=["*"])))
+
     def test_key_set_mode_ignores_only_changed_values(self):
         reports = [{"target": 1, "report": {"missing": ["A"], "extra": ["B"],
                                               "changed": ["C"]}}]
