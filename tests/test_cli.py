@@ -395,6 +395,27 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_filter_does_not_mask_invalid_later_input(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            good = os.path.join(directory, "good.env")
+            invalid = os.path.join(directory, "invalid.env")
+            for path, contents in ((reference, "A=one\n"), (good, "A=two\n"),
+                                   (invalid, "BROKEN")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--exclude", "*",
+                                     reference, good, invalid], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("invalid.env", result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_invalid_input_returns_two(self):
         result = self.run_files("A", "A=value")
         self.assertEqual(result.returncode, 2)
