@@ -699,6 +699,15 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("--base FILE", result.stdout)
 
+    def test_help_describes_filter_and_keys_only_options(self):
+        result = subprocess.run([sys.executable, "-m", "envdiff", "--help"],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--include GLOB", result.stdout)
+        self.assertIn("--exclude GLOB", result.stdout)
+        self.assertIn("--keys-only", result.stdout)
+
     def test_version_is_available_without_files(self):
         result = subprocess.run([sys.executable, "-m", "envdiff", "--version"],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
