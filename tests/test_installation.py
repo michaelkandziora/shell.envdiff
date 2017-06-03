@@ -22,6 +22,34 @@ def _run_owned_test_command(command, cwd, environment):
 
 
 class InstallationTests(unittest.TestCase):
+    def test_built_wheel_console_command_applies_filter(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        temporary = tempfile.mkdtemp()
+        try:
+            wheel_directory = os.path.join(temporary, "wheel")
+            prefix = os.path.join(temporary, "prefix")
+            subprocess.check_call([sys.executable, "setup.py", "bdist_wheel",
+                                   "--dist-dir", wheel_directory], cwd=root)
+            wheel = os.path.join(wheel_directory, os.listdir(wheel_directory)[0])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps",
+                                   "--prefix", prefix, wheel], env=dict(os.environ, PYTHONPATH=""))
+            reference = os.path.join(temporary, "reference.env")
+            target = os.path.join(temporary, "target.env")
+            for path, contents in ((reference, "A=one\nB=one\n"),
+                                   (target, "A=two\nB=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            script = os.path.join(prefix, "bin", "envdiff")
+            site = next(directory for directory, _, _ in os.walk(prefix)
+                        if directory.endswith("site-packages"))
+            result = subprocess.run([script, "--include", "A", reference, target],
+                                    env=dict(os.environ, PYTHONPATH=site), stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "CHANGED A\n")
+        finally:
+            shutil.rmtree(temporary)
+
     def test_archive_smoke_marker_stops_nested_archive_runner(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         environment = dict(os.environ, PYTHONPATH=os.path.join(root, "src"),
