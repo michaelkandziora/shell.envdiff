@@ -53,7 +53,7 @@ class InstallationTests(unittest.TestCase):
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                     universal_newlines=True)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(result.stdout.strip(), "0.3.0")
+            self.assertEqual(result.stdout.strip(), "0.4.0")
         finally:
             shutil.rmtree(temporary)
 
@@ -144,7 +144,7 @@ class InstallationTests(unittest.TestCase):
             import tarfile
             with tarfile.open(archive) as bundle:
                 bundle.extractall(temporary)
-            source = os.path.join(temporary, "envdiff-0.3.0")
+            source = os.path.join(temporary, "envdiff-0.4.0")
             environment = dict(os.environ, PYTHONPATH=os.path.join(source, "src"))
             for pattern in ("test_core.py", "test_cli.py"):
                 status, stdout, stderr = _run_owned_test_command(
@@ -161,7 +161,7 @@ class InstallationTests(unittest.TestCase):
                                 cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 universal_newlines=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.splitlines(), ["envdiff", "0.3.0"])
+        self.assertEqual(result.stdout.splitlines(), ["envdiff", "0.4.0"])
 
     def test_package_declares_supported_python_baseline(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
