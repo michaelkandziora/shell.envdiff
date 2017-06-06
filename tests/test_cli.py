@@ -434,6 +434,28 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_filter_report_does_not_reflect_filtered_secret_value(self):
+        result = self.run_files("A=private-one\nB=safe\n", "A=private-two\nB=new\n")
+        self.assertEqual(result.returncode, 1)
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=private-one\nB=safe\n")
+            with open(target, "w") as stream:
+                stream.write("A=private-two\nB=new\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--include", "B",
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "CHANGED B\n")
+            self.assertNotIn("private", result.stdout + result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_filtered_out_difference_returns_zero_without_output(self):
         directory = tempfile.mkdtemp()
         try:
