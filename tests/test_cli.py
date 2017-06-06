@@ -375,6 +375,25 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_keys_only_composes_after_key_filtering(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\nB=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\nC=one\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--include", "A",
+                                     "--keys-only", reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_exclude_option_wins_over_include_option(self):
         directory = tempfile.mkdtemp()
         try:
