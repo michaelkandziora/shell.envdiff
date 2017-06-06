@@ -145,6 +145,12 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(filtered[0]["sources"], reports[0]["sources"])
         self.assertEqual(filtered[0]["report"]["changed"], ["APP_PORT"])
 
+    def test_filtering_does_not_mutate_completed_report(self):
+        reports = [{"target": 1, "report": {"missing": [], "extra": [],
+                                              "changed": ["A", "B"]}}]
+        filter_reports(reports, includes=["A"])
+        self.assertEqual(reports[0]["report"]["changed"], ["A", "B"])
+
     def test_key_set_mode_ignores_only_changed_values(self):
         reports = [{"target": 1, "report": {"missing": ["A"], "extra": ["B"],
                                               "changed": ["C"]}}]
