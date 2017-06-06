@@ -137,6 +137,14 @@ class CompareTests(unittest.TestCase):
                                               "changed": ["TOKEN"]}}]
         self.assertFalse(has_differences(filter_reports(reports, excludes=["*"])))
 
+    def test_filtering_preserves_source_metadata_without_values(self):
+        reports = [{"target": 2, "report": {"missing": [], "extra": [],
+                                              "changed": ["APP_PORT", "DB_PORT"]},
+                    "sources": {"APP_PORT": ("BASE", 1), "DB_PORT": ("TARGET", 2)}}]
+        filtered = filter_reports(reports, includes=["APP_*"])
+        self.assertEqual(filtered[0]["sources"], reports[0]["sources"])
+        self.assertEqual(filtered[0]["report"]["changed"], ["APP_PORT"])
+
     def test_key_set_mode_ignores_only_changed_values(self):
         reports = [{"target": 1, "report": {"missing": ["A"], "extra": ["B"],
                                               "changed": ["C"]}}]
