@@ -453,6 +453,25 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_filter_applies_independently_to_each_target_ordinal(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, "target-{0}.env".format(number))
+                     for number in range(3)]
+            for path, contents in zip(paths, ("A=one\nB=one\n", "A=two\nB=one\n",
+                                              "A=one\nB=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--include", "B",
+                                     paths[0], paths[1], paths[2]], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "TARGET 1\nTARGET 2\nCHANGED B\n")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_filter_does_not_mask_invalid_later_input(self):
         directory = tempfile.mkdtemp()
         try:
