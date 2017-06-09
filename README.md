@@ -10,7 +10,7 @@ The value is everything after the first `=`; it may itself contain `=`.
 Single- and double-quoted values preserve spaces and `#` markers. Within a
 quoted value, `\\n`, `\\r`, `\\t`, a quoted delimiter, and `\\\\` are decoded;
 unknown escapes remain unchanged. An unquoted `#` starts a comment only after
-whitespace. UTF-8 BOMs and CRLF line endings are accepted consistently.
+whitespace (including a tab). UTF-8 BOMs and CRLF line endings are accepted consistently.
 `examples/quoted.env` contains syntax-only quoted assignments for inspection.
 
 ```sh
