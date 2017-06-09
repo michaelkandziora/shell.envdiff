@@ -50,6 +50,26 @@ class InstallationTests(unittest.TestCase):
         finally:
             shutil.rmtree(temporary)
 
+    def test_source_distribution_keeps_filter_help(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        temporary = tempfile.mkdtemp()
+        try:
+            subprocess.check_call([sys.executable, "setup.py", "sdist",
+                                   "--dist-dir", temporary], cwd=root)
+            archive = os.path.join(temporary, os.listdir(temporary)[0])
+            prefix = os.path.join(temporary, "prefix")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps",
+                                   "--prefix", prefix, archive], env=dict(os.environ, PYTHONPATH=""))
+            site = next(directory for directory, _, _ in os.walk(prefix)
+                        if directory.endswith("site-packages"))
+            result = subprocess.run([os.path.join(prefix, "bin", "envdiff"), "--help"],
+                                    env=dict(os.environ, PYTHONPATH=site), stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertIn("--include GLOB", result.stdout)
+        finally:
+            shutil.rmtree(temporary)
+
     def test_archive_smoke_marker_stops_nested_archive_runner(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         environment = dict(os.environ, PYTHONPATH=os.path.join(root, "src"),
