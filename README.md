@@ -76,6 +76,11 @@ remains selected, the command returns `0` without normal output.
 missing and extra keys. It is not a redaction switch—normal reports already
 never print values.
 
+```sh
+envdiff --include "APP_*" --exclude "*_TOKEN" reference.env target.env
+envdiff --keys-only reference.env target.env
+```
+
 ## Development
 
 From a source checkout, run the suite with the source package on the import
