@@ -70,17 +70,17 @@ class InstallationTests(unittest.TestCase):
         finally:
             shutil.rmtree(temporary)
 
-    def test_archive_smoke_marker_stops_nested_archive_runner(self):
+    def test_archive_smoke_runner_completes_without_nested_discovery(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         environment = dict(os.environ, PYTHONPATH=os.path.join(root, "src"),
                            ENVDIFF_ARCHIVE_SMOKE="1")
         result = subprocess.run([sys.executable, "-m", "unittest",
                                  "tests.test_installation.InstallationTests."
-                                 "test_fresh_source_archive_runs_documented_test_command", "-v"],
+                                 "test_fresh_source_archive_runs_core_and_cli_tests", "-v"],
                                 cwd=root, env=environment, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, universal_newlines=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("skipped", result.stderr)
+        self.assertIn("OK", result.stderr)
 
     def test_source_distribution_installs_console_command(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
