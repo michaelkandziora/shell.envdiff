@@ -70,7 +70,9 @@ Repeat `--include GLOB` to select report keys and `--exclude GLOB` to remove
 them; exclusions win when patterns overlap. Filtering occurs after every input
 has been parsed, layered, and compared, so an invalid source still returns
 status `2` even when its differences would not be selected. If no difference
-remains selected, the command returns `0` without normal output.
+remains selected, the command returns `0`. With one target there is no normal
+output; with multiple targets the `TARGET N` headings remain as normal
+comparison structure even when no difference is selected.
 
 `--keys-only` is a comparison mode: it ignores changed values while retaining
 missing and extra keys. It is not a redaction switch—normal reports already
