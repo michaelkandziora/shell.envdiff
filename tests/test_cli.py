@@ -32,6 +32,29 @@ class CommandTests(unittest.TestCase):
             for name in os.listdir(directory):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
+
+    def test_json_report_keeps_target_ordinals_and_layer_sources(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, "json-{0}.env".format(number))
+                     for number in range(4)]
+            for path, contents in zip(paths, ("A=one\n", "B=base\n", "A=two\n", "A=one\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--base",
+                                     paths[1], paths[0], paths[2], paths[3]],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            report = json.loads(result.stdout)
+            self.assertEqual([item["target"] for item in report["targets"]], [1, 2])
+            self.assertEqual(report["targets"][0]["changed"], ["A"])
+            self.assertEqual(report["targets"][1]["changed"], [])
+            self.assertNotIn("base", result.stdout)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
     def test_base_is_applied_before_target_without_changing_reference(self):
         directory = tempfile.mkdtemp()
         try:
