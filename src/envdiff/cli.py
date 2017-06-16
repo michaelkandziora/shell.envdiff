@@ -1,5 +1,6 @@
 """Command-line interface for envdiff."""
 import argparse
+import json
 import sys
 
 from . import __version__
@@ -27,6 +28,9 @@ def main(argv=None):
                         help="omit matching keys")
     parser.add_argument("--keys-only", action="store_true",
                         help="ignore value-only differences")
+    output = parser.add_mutually_exclusive_group()
+    output.add_argument("--json", action="store_true", help="write a JSON report")
+    output.add_argument("--quiet", action="store_true", help="write no normal report")
     parser.add_argument("reference")
     parser.add_argument("target", nargs="+", help="one or more files to compare")
     args = parser.parse_args(argv)
@@ -44,8 +48,21 @@ def main(argv=None):
     reports = filter_reports(reports, args.include, args.exclude)
     if args.keys_only:
         reports = key_set_reports(reports)
-    _write_reports(reports)
+    if args.json:
+        print(json.dumps(_json_report(reports), sort_keys=True))
+    elif not args.quiet:
+        _write_reports(reports)
     return 1 if has_differences(reports) else 0
+
+
+def _json_report(reports):
+    """Return the stable, value-free JSON representation of target reports."""
+    targets = []
+    for item in reports:
+        report = {"target": item["target"]}
+        report.update(item["report"])
+        targets.append(report)
+    return {"schema_version": 1, "targets": targets}
 
 
 def _read_assignments(path):
