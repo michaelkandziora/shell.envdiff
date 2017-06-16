@@ -113,6 +113,11 @@ class ParseTests(unittest.TestCase):
 
 
 class CompareTests(unittest.TestCase):
+    def test_report_model_has_stable_key_only_categories(self):
+        report = compare({"A": "private-reference", "B": "one"},
+                         {"A": "private-target", "C": "two"})
+        self.assertEqual(list(report), ["missing", "extra", "changed"])
+        self.assertEqual(report, {"missing": ["B"], "extra": ["C"], "changed": ["A"]})
     def test_include_filters_completed_difference_keys(self):
         reports = [{"target": 1, "report": {"missing": ["A"], "extra": ["B"],
                                               "changed": ["C"]}}]
