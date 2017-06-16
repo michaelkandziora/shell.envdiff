@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import sys
 import tempfile
@@ -8,6 +9,29 @@ from envdiff.cli import _read_inputs, _read_layered_inputs, _report_lines
 
 
 class CommandTests(unittest.TestCase):
+    def test_json_report_has_versioned_single_target_schema(self):
+        result = self.run_files("A=one\nB=one\n", "A=two\nC=two\n")
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\nB=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\nC=two\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", reference, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(json.loads(result.stdout), {"schema_version": 1,
+                             "targets": [{"target": 1, "missing": ["B"],
+                                          "extra": ["C"], "changed": ["A"]}]})
+            self.assertNotIn("one", result.stdout)
+            self.assertNotIn("two", result.stdout)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
     def test_base_is_applied_before_target_without_changing_reference(self):
         directory = tempfile.mkdtemp()
         try:
