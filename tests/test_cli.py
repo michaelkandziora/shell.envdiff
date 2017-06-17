@@ -50,6 +50,9 @@ class CommandTests(unittest.TestCase):
             self.assertEqual([item["target"] for item in report["targets"]], [1, 2])
             self.assertEqual(report["targets"][0]["changed"], ["A"])
             self.assertEqual(report["targets"][1]["changed"], [])
+            self.assertEqual(report["targets"][0]["sources"],
+                             [{"key": "A", "role": "TARGET", "ordinal": 1},
+                              {"key": "B", "role": "BASE", "ordinal": 1}])
             self.assertNotIn("base", result.stdout)
         finally:
             for name in os.listdir(directory):
