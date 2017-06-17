@@ -61,6 +61,13 @@ def _json_report(reports):
     for item in reports:
         report = {"target": item["target"]}
         report.update(item["report"])
+        if "sources" in item:
+            sources = []
+            for kind in ("missing", "extra", "changed"):
+                for name in item["report"][kind]:
+                    role, ordinal = item["sources"].get(name, ("REFERENCE", 1))
+                    sources.append({"key": name, "role": role, "ordinal": ordinal})
+            report["sources"] = sources
         targets.append(report)
     return {"schema_version": 1, "targets": targets}
 
