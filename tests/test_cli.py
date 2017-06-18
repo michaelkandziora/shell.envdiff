@@ -53,6 +53,16 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_json_and_quiet_conflict_without_echoing_arguments(self):
+        result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--quiet",
+                                 "private-reference.env", "private-target.env"],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "envdiff: invalid command arguments\n")
+        self.assertNotIn("private", result.stderr)
+
     def test_json_report_keeps_target_ordinals_and_layer_sources(self):
         directory = tempfile.mkdtemp()
         try:
