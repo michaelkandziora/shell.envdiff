@@ -109,6 +109,26 @@ class CommandTests(unittest.TestCase):
             for name in os.listdir(directory):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
+
+    def test_json_report_applies_filters_before_serialization(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("APP_PORT=one\nTOKEN=one\n")
+            with open(target, "w") as stream:
+                stream.write("APP_PORT=two\nTOKEN=two\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--include",
+                                     "APP_*", reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(json.loads(result.stdout)["targets"][0]["changed"], ["APP_PORT"])
+            self.assertNotIn("TOKEN", result.stdout)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
     def test_base_is_applied_before_target_without_changing_reference(self):
         directory = tempfile.mkdtemp()
         try:
