@@ -53,6 +53,25 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_quiet_equal_comparison_returns_zero_without_output(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            for path in (reference, target):
+                with open(path, "w") as stream:
+                    stream.write("A=one\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--quiet", reference, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+            self.assertEqual(result.stderr, "")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_quiet_keeps_input_error_diagnostic_and_exit(self):
         result = self.run_files("BROKEN", "A=value")
         directory = tempfile.mkdtemp()
