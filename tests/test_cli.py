@@ -53,6 +53,27 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_quiet_keeps_input_error_diagnostic_and_exit(self):
+        result = self.run_files("BROKEN", "A=value")
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("BROKEN")
+            with open(target, "w") as stream:
+                stream.write("A=value")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--quiet", reference, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertTrue(result.stderr.startswith("envdiff:"))
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_json_and_quiet_conflict_without_echoing_arguments(self):
         result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--quiet",
                                  "private-reference.env", "private-target.env"],
