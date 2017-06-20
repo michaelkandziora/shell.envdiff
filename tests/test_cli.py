@@ -103,6 +103,14 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.stderr, "envdiff: invalid command arguments\n")
         self.assertNotIn("private", result.stderr)
 
+    def test_quiet_and_json_help_text_describe_automation_options(self):
+        result = subprocess.run([sys.executable, "-m", "envdiff", "--help"],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--json", result.stdout)
+        self.assertIn("--quiet", result.stdout)
+
     def test_json_report_keeps_target_ordinals_and_layer_sources(self):
         directory = tempfile.mkdtemp()
         try:
