@@ -169,6 +169,25 @@ class CommandTests(unittest.TestCase):
             for name in os.listdir(directory):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
+
+    def test_json_keys_only_omits_changed_category_entries(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--keys-only",
+                                     reference, target], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(json.loads(result.stdout)["targets"][0]["changed"], [])
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
     def test_base_is_applied_before_target_without_changing_reference(self):
         directory = tempfile.mkdtemp()
         try:
