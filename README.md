@@ -83,6 +83,15 @@ envdiff --include "APP_*" --exclude "*_TOKEN" reference.env target.env
 envdiff --keys-only reference.env target.env
 ```
 
+## Automation output
+
+Use `--json` for a stable, value-free document with `schema_version: 1` and a
+`targets` array in input order. Each target has its ordinal plus sorted
+`missing`, `extra`, and `changed` key arrays. Layered reports add source
+records containing only a key, source role, and ordinal. `--quiet` suppresses
+normal output while preserving exit status and error diagnostics. It cannot be
+combined with `--json`.
+
 ## Development
 
 From a source checkout, run the suite with the source package on the import
