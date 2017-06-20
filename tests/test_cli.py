@@ -196,6 +196,27 @@ class CommandTests(unittest.TestCase):
             for name in os.listdir(directory):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
+
+    def test_json_serialization_is_deterministic_for_sorted_reports(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("Z=one\nA=one\n")
+            with open(target, "w") as stream:
+                stream.write("Z=two\nB=two\n")
+            command = [sys.executable, "-m", "envdiff", "--json", reference, target]
+            first = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   universal_newlines=True)
+            second = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(first.stdout, second.stdout)
+            self.assertEqual(json.loads(first.stdout)["targets"][0]["missing"], ["A"])
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
     def test_base_is_applied_before_target_without_changing_reference(self):
         directory = tempfile.mkdtemp()
         try:
