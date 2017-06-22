@@ -153,6 +153,29 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_layered_json_marks_missing_key_with_reference_source(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            base = os.path.join(directory, "base.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            with open(base, "w") as stream:
+                stream.write("")
+            with open(target, "w") as stream:
+                stream.write("")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--base", base,
+                                     reference, target], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(json.loads(result.stdout)["targets"][0]["sources"],
+                             [{"key": "A", "role": "REFERENCE", "ordinal": 1}])
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_json_report_applies_filters_before_serialization(self):
         directory = tempfile.mkdtemp()
         try:
