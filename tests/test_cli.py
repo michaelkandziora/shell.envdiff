@@ -217,6 +217,24 @@ class CommandTests(unittest.TestCase):
             for name in os.listdir(directory):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
+
+    def test_json_equal_comparison_has_empty_categories_and_zero_exit(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            for path in (reference, target):
+                with open(path, "w") as stream:
+                    stream.write("A=one\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", reference, target],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(json.loads(result.stdout)["targets"][0],
+                             {"target": 1, "missing": [], "extra": [], "changed": []})
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
     def test_base_is_applied_before_target_without_changing_reference(self):
         directory = tempfile.mkdtemp()
         try:
