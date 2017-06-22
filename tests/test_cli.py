@@ -72,6 +72,22 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_quiet_suppresses_multi_target_headings(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, "quiet-{0}.env".format(number)) for number in range(3)]
+            for path, contents in zip(paths, ("A=one\n", "A=two\n", "A=three\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--quiet", paths[0], paths[1], paths[2]],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_quiet_keeps_input_error_diagnostic_and_exit(self):
         result = self.run_files("BROKEN", "A=value")
         directory = tempfile.mkdtemp()
