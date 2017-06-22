@@ -88,6 +88,25 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_quiet_keys_only_returns_zero_for_value_only_difference(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--quiet", "--keys-only",
+                                     reference, target], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_quiet_keeps_input_error_diagnostic_and_exit(self):
         result = self.run_files("BROKEN", "A=value")
         directory = tempfile.mkdtemp()
