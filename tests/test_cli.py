@@ -176,6 +176,27 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_json_provenance_never_reflects_source_paths_or_values(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "private-reference.env")
+            base = os.path.join(directory, "private-base.env")
+            target = os.path.join(directory, "private-target.env")
+            for path, contents in ((reference, "A=secret-one\n"), (base, "B=secret-two\n"),
+                                   (target, "A=secret-three\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--base", base,
+                                     reference, target], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            for hidden in ("private", "secret-one", "secret-two", "secret-three"):
+                self.assertNotIn(hidden, result.stdout + result.stderr)
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_json_report_applies_filters_before_serialization(self):
         directory = tempfile.mkdtemp()
         try:
