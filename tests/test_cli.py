@@ -236,6 +236,27 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
+    def test_json_filter_removes_unselected_provenance_records(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            base = os.path.join(directory, "base.env")
+            target = os.path.join(directory, "target.env")
+            for path, contents in ((reference, "A=one\n"), (base, "A=two\nB=two\n"), (target, "")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--base", base,
+                                     "--include", "A", reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            payload = json.loads(result.stdout)["targets"][0]
+            self.assertEqual(payload["sources"], [{"key": "A", "role": "BASE", "ordinal": 1}])
+            self.assertFalse(any(item["key"] == "B" for item in payload["sources"]))
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_json_input_error_has_no_partial_document(self):
         directory = tempfile.mkdtemp()
         try:
