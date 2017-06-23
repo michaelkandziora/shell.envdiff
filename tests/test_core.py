@@ -162,6 +162,13 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(key_set_reports(reports)[0]["report"],
                          {"missing": ["A"], "extra": ["B"], "changed": []})
 
+    def test_key_set_projection_keeps_source_metadata_unchanged(self):
+        reports = [{"target": 1, "report": {"missing": [], "extra": [], "changed": ["A"]},
+                    "sources": {"A": ("TARGET", 1)}}]
+        projected = key_set_reports(reports)
+        self.assertEqual(projected[0]["sources"], {"A": ("TARGET", 1)})
+        self.assertEqual(projected[0]["report"]["changed"], [])
+
     def test_later_layers_override_earlier_layers(self):
         self.assertEqual(merge_layers([{"A": "base", "B": "one"},
                                        {"A": "target", "C": "two"}]),
