@@ -92,6 +92,12 @@ records containing only a key, source role, and ordinal. `--quiet` suppresses
 normal output while preserving exit status and error diagnostics. It cannot be
 combined with `--json`.
 
+For example, a single-target JSON report has this shape (keys only):
+
+```json
+{"schema_version": 1, "targets": [{"changed": ["PORT"], "extra": [], "missing": [], "target": 1}]}
+```
+
 ## Development
 
 From a source checkout, run the suite with the source package on the import
