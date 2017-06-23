@@ -43,6 +43,27 @@ class InstallationTests(unittest.TestCase):
         finally:
             shutil.rmtree(temporary)
 
+    def test_built_wheel_console_command_preserves_quiet_exit(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        temporary = tempfile.mkdtemp()
+        try:
+            wheel_directory = os.path.join(temporary, "wheel")
+            prefix = os.path.join(temporary, "prefix")
+            subprocess.check_call([sys.executable, "setup.py", "bdist_wheel", "--dist-dir", wheel_directory], cwd=root)
+            wheel = os.path.join(wheel_directory, os.listdir(wheel_directory)[0])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps", "--prefix", prefix, wheel], env=dict(os.environ, PYTHONPATH=""))
+            reference = os.path.join(temporary, "reference.env")
+            target = os.path.join(temporary, "target.env")
+            for path, contents in ((reference, "A=one\n"), (target, "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            site = next(directory for directory, _, _ in os.walk(prefix) if directory.endswith("site-packages"))
+            result = subprocess.run([os.path.join(prefix, "bin", "envdiff"), "--quiet", reference, target], env=dict(os.environ, PYTHONPATH=site), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "")
+        finally:
+            shutil.rmtree(temporary)
+
     def test_built_wheel_console_command_applies_filter(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         temporary = tempfile.mkdtemp()
