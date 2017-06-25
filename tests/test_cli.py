@@ -9,6 +9,32 @@ from envdiff.cli import _read_inputs, _read_layered_inputs, _report_lines
 
 
 class CommandTests(unittest.TestCase):
+    def test_text_and_json_reports_match_golden_contracts(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\\nB=one\\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\\nC=two\\n")
+            fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
+            text = subprocess.run([sys.executable, "-m", "envdiff", reference, target],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+            machine = subprocess.run([sys.executable, "-m", "envdiff", "--json", reference, target],
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                     universal_newlines=True)
+            with open(os.path.join(fixtures, "r5-text-report.txt")) as stream:
+                self.assertEqual(text.stdout, stream.read())
+            with open(os.path.join(fixtures, "r5-json-report.json")) as stream:
+                self.assertEqual(machine.stdout, stream.read())
+            self.assertEqual((text.returncode, machine.returncode), (1, 1))
+        finally:
+            for name in os.listdir(directory):
+                os.unlink(os.path.join(directory, name))
+            os.rmdir(directory)
+
     def test_json_report_has_versioned_single_target_schema(self):
         result = self.run_files("A=one\nB=one\n", "A=two\nC=two\n")
         directory = tempfile.mkdtemp()
