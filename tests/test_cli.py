@@ -15,9 +15,9 @@ class CommandTests(unittest.TestCase):
             reference = os.path.join(directory, "reference.env")
             target = os.path.join(directory, "target.env")
             with open(reference, "w") as stream:
-                stream.write("A=one\\nB=one\\n")
+                stream.write("A=one\nB=one\n")
             with open(target, "w") as stream:
-                stream.write("A=two\\nC=two\\n")
+                stream.write("A=two\nC=two\n")
             fixtures = os.path.join(os.path.dirname(__file__), "fixtures")
             text = subprocess.run([sys.executable, "-m", "envdiff", reference, target],
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
