@@ -41,6 +41,29 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertEqual(result.stdout, "")
         self.assertNotIn("not-a-real-codec", result.stderr)
+
+    def test_stdin_can_be_used_for_only_one_source_in_a_command(self):
+        result = subprocess.run([sys.executable, "-m", "envdiff", "-", "-"],
+                                input="A=one\n", stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, universal_newlines=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertNotIn("A=one", result.stderr)
+
+    def test_stdin_can_supply_a_single_target(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", reference, "-"],
+                                    input="A=two\n", stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "CHANGED A\n")
+        finally:
+            os.unlink(reference)
+            os.rmdir(directory)
     def test_reader_rejects_a_source_larger_than_its_byte_limit(self):
         directory = tempfile.mkdtemp()
         try:
