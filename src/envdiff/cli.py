@@ -72,10 +72,30 @@ def _json_report(reports):
     return {"schema_version": 1, "targets": targets}
 
 
-def _read_assignments(path):
-    """Read a complete text input without including it in diagnostics."""
-    with open(path, "r", encoding="utf-8") as stream:
-        return parse(stream.read())
+def _read_assignments(path, max_bytes=None, encoding="utf-8", stdin=None):
+    """Read and decode one bounded source without preserving its location."""
+    if path == "-":
+        stream = stdin if stdin is not None else getattr(sys.stdin, "buffer", sys.stdin)
+        data = _read_bytes(stream, max_bytes)
+    else:
+        with open(path, "rb") as stream:
+            data = _read_bytes(stream, max_bytes)
+    try:
+        return parse(data.decode(encoding))
+    except LookupError:
+        raise ValueError("unsupported input encoding")
+    except UnicodeError:
+        raise ValueError("cannot decode input")
+
+
+def _read_bytes(stream, max_bytes):
+    """Read at most one source limit plus a sentinel byte."""
+    if max_bytes is None:
+        return stream.read()
+    data = stream.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        raise ValueError("input exceeds byte limit")
+    return data
 
 
 def _read_inputs(reference_path, target_paths):
