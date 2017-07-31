@@ -28,6 +28,10 @@ def main(argv=None):
                         help="omit matching keys")
     parser.add_argument("--keys-only", action="store_true",
                         help="ignore value-only differences")
+    parser.add_argument("--max-bytes", type=_positive_bytes, metavar="BYTES",
+                        help="limit each input source to BYTES")
+    parser.add_argument("--encoding", default="utf-8", metavar="NAME",
+                        help="decode every input using NAME")
     output = parser.add_mutually_exclusive_group()
     output.add_argument("--json", action="store_true", help="write a JSON report")
     output.add_argument("--quiet", action="store_true", help="write no normal report")
@@ -36,7 +40,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         reference, bases, targets = _read_layered_inputs(args.reference, args.base,
-                                                         args.target)
+                                                         args.target, args.max_bytes,
+                                                         args.encoding)
     except (IOError, UnicodeError):
         print("envdiff: cannot read UTF-8 input", file=sys.stderr)
         return 2
@@ -72,6 +77,17 @@ def _json_report(reports):
     return {"schema_version": 1, "targets": targets}
 
 
+def _positive_bytes(value):
+    """Accept a positive byte count without exposing an invalid argument."""
+    try:
+        number = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("invalid byte count")
+    if number < 1:
+        raise argparse.ArgumentTypeError("invalid byte count")
+    return number
+
+
 def _read_assignments(path, max_bytes=None, encoding="utf-8", stdin=None):
     """Read and decode one bounded source without preserving its location."""
     if path == "-":
@@ -98,20 +114,21 @@ def _read_bytes(stream, max_bytes):
     return data
 
 
-def _read_inputs(reference_path, target_paths):
+def _read_inputs(reference_path, target_paths, max_bytes=None, encoding="utf-8"):
     """Load all inputs before comparison so output remains atomic on failure."""
-    reference = _read_assignments(reference_path)
+    reference = _read_assignments(reference_path, max_bytes, encoding)
     targets = []
     for path in target_paths:
-        targets.append(_read_assignments(path))
+        targets.append(_read_assignments(path, max_bytes, encoding))
     return reference, targets
 
 
-def _read_layered_inputs(reference_path, base_paths, target_paths):
+def _read_layered_inputs(reference_path, base_paths, target_paths, max_bytes=None,
+                         encoding="utf-8"):
     """Load reference, bases, and targets before emitting a report."""
-    reference = _read_assignments(reference_path)
-    bases = [_read_assignments(path) for path in base_paths]
-    targets = [_read_assignments(path) for path in target_paths]
+    reference = _read_assignments(reference_path, max_bytes, encoding)
+    bases = [_read_assignments(path, max_bytes, encoding) for path in base_paths]
+    targets = [_read_assignments(path, max_bytes, encoding) for path in target_paths]
     return reference, bases, targets
 
 
