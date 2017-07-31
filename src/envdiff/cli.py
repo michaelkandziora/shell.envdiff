@@ -126,6 +126,9 @@ def _read_inputs(reference_path, target_paths, max_bytes=None, encoding="utf-8")
 def _read_layered_inputs(reference_path, base_paths, target_paths, max_bytes=None,
                          encoding="utf-8"):
     """Load reference, bases, and targets before emitting a report."""
+    paths = [reference_path] + list(base_paths) + list(target_paths)
+    if paths.count("-") > 1:
+        raise ValueError("standard input may be used once")
     reference = _read_assignments(reference_path, max_bytes, encoding)
     bases = [_read_assignments(path, max_bytes, encoding) for path in base_paths]
     targets = [_read_assignments(path, max_bytes, encoding) for path in target_paths]
