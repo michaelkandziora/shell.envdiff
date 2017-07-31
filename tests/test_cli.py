@@ -1,3 +1,4 @@
+import io
 import os
 import json
 import subprocess
@@ -5,10 +6,38 @@ import sys
 import tempfile
 import unittest
 
-from envdiff.cli import _read_inputs, _read_layered_inputs, _report_lines
+from envdiff.cli import (_read_inputs, _read_layered_inputs, _report_lines,
+                         _read_assignments)
 
 
 class CommandTests(unittest.TestCase):
+    def test_reader_rejects_a_source_larger_than_its_byte_limit(self):
+        directory = tempfile.mkdtemp()
+        try:
+            path = os.path.join(directory, "large.env")
+            with open(path, "wb") as stream:
+                stream.write(b"A=one\n")
+            with self.assertRaises(ValueError):
+                _read_assignments(path, max_bytes=5)
+        finally:
+            os.unlink(path)
+            os.rmdir(directory)
+
+    def test_reader_decodes_the_selected_encoding_before_parsing(self):
+        directory = tempfile.mkdtemp()
+        try:
+            path = os.path.join(directory, "latin.env")
+            with open(path, "wb") as stream:
+                stream.write("A=olá\n".encode("latin-1"))
+            self.assertEqual(_read_assignments(path, encoding="latin-1"),
+                             {"A": "olá"})
+        finally:
+            os.unlink(path)
+            os.rmdir(directory)
+
+    def test_reader_accepts_stdin_once_when_given_a_binary_stream(self):
+        self.assertEqual(_read_assignments("-", stdin=io.BytesIO(b"A=one\n")),
+                         {"A": "one"})
     def test_text_and_json_reports_match_golden_contracts(self):
         directory = tempfile.mkdtemp()
         try:
