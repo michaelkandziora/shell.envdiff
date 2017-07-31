@@ -11,6 +11,36 @@ from envdiff.cli import (_read_inputs, _read_layered_inputs, _report_lines,
 
 
 class CommandTests(unittest.TestCase):
+    def test_max_bytes_option_rejects_each_oversized_input_without_report(self):
+        result = self.run_files("A=one\n", "A=two\n", extra=["--max-bytes", "5"])
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertNotIn("one", result.stderr)
+
+    def test_encoding_option_decodes_every_source_before_comparison(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            for path in (reference, target):
+                with open(path, "wb") as stream:
+                    stream.write("A=olá\n".encode("latin-1"))
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--encoding",
+                                     "latin-1", reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, "")
+        finally:
+            for path in (reference, target):
+                os.unlink(path)
+            os.rmdir(directory)
+
+    def test_invalid_encoding_is_a_safe_input_error(self):
+        result = self.run_files("A=one\n", "A=one\n",
+                                extra=["--encoding", "not-a-real-codec"])
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertNotIn("not-a-real-codec", result.stderr)
     def test_reader_rejects_a_source_larger_than_its_byte_limit(self):
         directory = tempfile.mkdtemp()
         try:
@@ -657,7 +687,7 @@ class CommandTests(unittest.TestCase):
                 os.unlink(os.path.join(directory, name))
             os.rmdir(directory)
 
-    def run_files(self, left, right):
+    def run_files(self, left, right, extra=()):
         directory = tempfile.mkdtemp()
         try:
             first = os.path.join(directory, "first.env")
@@ -666,7 +696,7 @@ class CommandTests(unittest.TestCase):
                 stream.write(left)
             with open(second, "w") as stream:
                 stream.write(right)
-            return subprocess.run([sys.executable, "-m", "envdiff", first, second],
+            return subprocess.run([sys.executable, "-m", "envdiff"] + list(extra) + [first, second],
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   universal_newlines=True)
         finally:
