@@ -1,7 +1,9 @@
 """Command-line interface for envdiff."""
 import argparse
 import json
+import os
 import sys
+import tempfile
 
 from . import __version__
 from .core import (compare_effective_targets, compare_targets, filter_reports,
@@ -35,6 +37,7 @@ def main(argv=None):
     output = parser.add_mutually_exclusive_group()
     output.add_argument("--json", action="store_true", help="write a JSON report")
     output.add_argument("--quiet", action="store_true", help="write no normal report")
+    parser.add_argument("--output", metavar="FILE", help="write report to FILE")
     parser.add_argument("reference")
     parser.add_argument("target", nargs="+", help="one or more files to compare")
     args = parser.parse_args(argv)
@@ -53,10 +56,19 @@ def main(argv=None):
     reports = filter_reports(reports, args.include, args.exclude)
     if args.keys_only:
         reports = key_set_reports(reports)
+    content = ""
     if args.json:
-        print(json.dumps(_json_report(reports), sort_keys=True))
+        content = json.dumps(_json_report(reports), sort_keys=True) + "\n"
     elif not args.quiet:
-        _write_reports(reports)
+        content = _render_reports(reports)
+    try:
+        if args.output:
+            _write_output(args.output, content)
+        elif content:
+            sys.stdout.write(content)
+    except IOError:
+        print("envdiff: cannot write report", file=sys.stderr)
+        return 2
     return 1 if has_differences(reports) else 0
 
 
@@ -139,6 +151,28 @@ def _write_reports(reports):
     """Render complete reports only after every input was read successfully."""
     for line in _report_lines(reports):
         print(line)
+
+
+def _render_reports(reports):
+    """Render all normal report lines before a destination is opened."""
+    lines = _report_lines(reports)
+    return "".join(line + "\n" for line in lines)
+
+
+def _write_output(path, content):
+    """Replace an output file only after the complete report has been written."""
+    directory = os.path.dirname(path) or "."
+    descriptor, temporary = tempfile.mkstemp(prefix=".envdiff-", dir=directory)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(content)
+        os.replace(temporary, path)
+    except Exception:
+        try:
+            os.unlink(temporary)
+        except OSError:
+            pass
+        raise
 
 
 def _report_lines(reports):
