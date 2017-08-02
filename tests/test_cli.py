@@ -106,6 +106,51 @@ class CommandTests(unittest.TestCase):
             for path in (reference, target):
                 os.unlink(path)
             os.rmdir(directory)
+
+    def test_output_file_receives_json_without_using_stdout(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            output = os.path.join(directory, "report.json")
+            for path, contents in ((reference, "A=one\n"), (target, "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--output",
+                                     output, reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "")
+            with open(output) as stream:
+                self.assertEqual(json.load(stream)["schema_version"], 1)
+        finally:
+            for path in (reference, target, output):
+                if os.path.exists(path):
+                    os.unlink(path)
+            os.rmdir(directory)
+
+    def test_output_is_not_touched_when_input_is_invalid(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            output = os.path.join(directory, "report.txt")
+            with open(reference, "w") as stream:
+                stream.write("BROKEN\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\n")
+            with open(output, "w") as stream:
+                stream.write("existing\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--output", output,
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            with open(output) as stream:
+                self.assertEqual(stream.read(), "existing\n")
+        finally:
+            for path in (reference, target, output):
+                os.unlink(path)
+            os.rmdir(directory)
     def test_reader_rejects_a_source_larger_than_its_byte_limit(self):
         directory = tempfile.mkdtemp()
         try:
