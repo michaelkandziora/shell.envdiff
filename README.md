@@ -17,8 +17,10 @@ whitespace (including a tab). UTF-8 BOMs and CRLF line endings are accepted cons
 envdiff examples/quoted-reference.env examples/quoted-target.env
 ```
 
-Files are decoded as UTF-8. Read and decoding failures use the same safe error
-status and do not copy file contents into diagnostics.
+Files are decoded as UTF-8 by default. Use `--encoding NAME` when a complete
+comparison uses another Python codec, and `--max-bytes BYTES` to cap every
+reference, base, and target independently. Read, limit, and decoding failures
+use the same safe error status and do not copy file contents into diagnostics.
 
 ```sh
 envdiff examples/reference.env examples/target.env examples/target-two.env
@@ -64,6 +66,10 @@ so command input is not copied to standard error.
 Use `envdiff --help` for the positional file arguments and `envdiff --version`
 to identify the installed command in build logs.
 
+`-` may be used for exactly one source to read standard input. It cannot stand
+for both a reference and target (or for repeated targets), avoiding ambiguity
+about a consumed stream.
+
 ## Selecting keys
 
 Repeat `--include GLOB` to select report keys and `--exclude GLOB` to remove
@@ -97,6 +103,10 @@ For example, a single-target JSON report has this shape (keys only):
 ```json
 {"schema_version": 1, "targets": [{"changed": ["PORT"], "extra": [], "missing": [], "target": 1}]}
 ```
+
+Use `--output FILE` to replace a report destination only after all inputs have
+parsed and the complete report is ready. It works with text or `--json`; a
+write failure returns status `2` without reflecting the destination path.
 
 ## Development
 
