@@ -64,6 +64,48 @@ class CommandTests(unittest.TestCase):
         finally:
             os.unlink(reference)
             os.rmdir(directory)
+
+    def test_output_file_receives_complete_text_report(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            output = os.path.join(directory, "report.txt")
+            for path, contents in ((reference, "A=one\n"), (target, "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--output", output,
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "")
+            with open(output) as stream:
+                self.assertEqual(stream.read(), "CHANGED A\n")
+        finally:
+            for path in (reference, target, output):
+                if os.path.exists(path):
+                    os.unlink(path)
+            os.rmdir(directory)
+
+    def test_unwritable_output_returns_safe_error_without_stdout(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            for path, contents in ((reference, "A=one\n"), (target, "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            missing = os.path.join(directory, "missing", "report.txt")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--output", missing,
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertNotIn("missing", result.stderr)
+        finally:
+            for path in (reference, target):
+                os.unlink(path)
+            os.rmdir(directory)
     def test_reader_rejects_a_source_larger_than_its_byte_limit(self):
         directory = tempfile.mkdtemp()
         try:
