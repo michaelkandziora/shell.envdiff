@@ -120,7 +120,15 @@ def _read_bytes(stream, max_bytes):
     """Read at most one source limit plus a sentinel byte."""
     if max_bytes is None:
         return stream.read()
-    data = stream.read(max_bytes + 1)
+    chunks = []
+    remaining = max_bytes + 1
+    while remaining:
+        chunk = stream.read(remaining)
+        if not chunk:
+            break
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    data = b"".join(chunks)
     if len(data) > max_bytes:
         raise ValueError("input exceeds byte limit")
     return data

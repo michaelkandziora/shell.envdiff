@@ -5,12 +5,34 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
-from envdiff.cli import (_read_inputs, _read_layered_inputs, _report_lines,
-                         _read_assignments)
+from envdiff.cli import (_read_bytes, _read_inputs, _read_layered_inputs,
+                         _report_lines, _read_assignments, _write_output)
 
 
 class CommandTests(unittest.TestCase):
+    def test_bounded_reader_continues_after_short_reads(self):
+        class ShortReader(object):
+            def __init__(self):
+                self.parts = [b"A=", b"one", b"\n"]
+
+            def read(self, ignored):
+                return self.parts.pop(0) if self.parts else b""
+
+        with self.assertRaises(ValueError):
+            _read_bytes(ShortReader(), 5)
+
+    def test_output_replace_failure_removes_temporary_file(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            with mock.patch("envdiff.cli.os.replace", side_effect=OSError):
+                with self.assertRaises(OSError):
+                    _write_output(output, "CHANGED A\n")
+            self.assertEqual(os.listdir(directory), [])
+        finally:
+            os.rmdir(directory)
     def test_max_bytes_option_rejects_each_oversized_input_without_report(self):
         result = self.run_files("A=one\n", "A=two\n", extra=["--max-bytes", "5"])
         self.assertEqual(result.returncode, 2)
