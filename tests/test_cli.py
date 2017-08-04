@@ -1315,7 +1315,7 @@ class CommandTests(unittest.TestCase):
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 universal_newlines=True)
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stdout.strip(), "0.5.0")
+        self.assertEqual(result.stdout.strip(), "0.6.0")
 
     def test_invalid_utf8_is_a_controlled_error(self):
         directory = tempfile.mkdtemp()
