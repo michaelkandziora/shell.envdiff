@@ -9,6 +9,8 @@ from . import __version__
 from .core import (compare_effective_targets, compare_targets, filter_reports,
                    has_differences, key_set_reports, parse)
 
+DEFAULT_TOTAL_BYTES = 64 * 1024 * 1024
+
 
 class SafeArgumentParser(argparse.ArgumentParser):
     """Keep command-line diagnostics useful without reflecting input text."""
@@ -32,6 +34,9 @@ def main(argv=None):
                         help="ignore value-only differences")
     parser.add_argument("--max-bytes", type=_positive_bytes, metavar="BYTES",
                         help="limit each input source to BYTES")
+    parser.add_argument("--total-bytes", type=_positive_bytes, metavar="BYTES",
+                        default=DEFAULT_TOTAL_BYTES,
+                        help="limit all input sources to BYTES (default: 64 MiB)")
     parser.add_argument("--encoding", default="utf-8", metavar="NAME",
                         help="decode every input using NAME")
     output = parser.add_mutually_exclusive_group()
@@ -44,7 +49,7 @@ def main(argv=None):
     try:
         reference, bases, targets = _read_layered_inputs(args.reference, args.base,
                                                          args.target, args.max_bytes,
-                                                         args.encoding)
+                                                         args.encoding, args.total_bytes)
     except (IOError, UnicodeError):
         print("envdiff: cannot read UTF-8 input", file=sys.stderr)
         return 2
@@ -144,15 +149,49 @@ def _read_inputs(reference_path, target_paths, max_bytes=None, encoding="utf-8")
 
 
 def _read_layered_inputs(reference_path, base_paths, target_paths, max_bytes=None,
-                         encoding="utf-8"):
+                         encoding="utf-8", total_bytes=DEFAULT_TOTAL_BYTES):
     """Load reference, bases, and targets before emitting a report."""
     paths = [reference_path] + list(base_paths) + list(target_paths)
     if paths.count("-") > 1:
         raise ValueError("standard input may be used once")
-    reference = _read_assignments(reference_path, max_bytes, encoding)
-    bases = [_read_assignments(path, max_bytes, encoding) for path in base_paths]
-    targets = [_read_assignments(path, max_bytes, encoding) for path in target_paths]
+    reader = _InputReader(max_bytes, total_bytes, encoding)
+    reference = reader.read(reference_path)
+    bases = [reader.read(path) for path in base_paths]
+    targets = [reader.read(path) for path in target_paths]
     return reference, bases, targets
+
+
+class _InputReader(object):
+    """Read each source once while enforcing source and shared byte budgets."""
+
+    def __init__(self, max_bytes, total_bytes, encoding):
+        self.max_bytes = max_bytes
+        self.remaining = total_bytes
+        self.encoding = encoding
+
+    def read(self, path):
+        if path == "-":
+            stream = getattr(sys.stdin, "buffer", sys.stdin)
+            return self._decode(stream)
+        with open(path, "rb") as stream:
+            return self._decode(stream)
+
+    def _decode(self, stream):
+        limit = self.remaining
+        if self.max_bytes is not None and self.max_bytes < limit:
+            limit = self.max_bytes
+        data = _read_bytes(stream, limit)
+        if self.max_bytes is not None and len(data) > self.max_bytes:
+            raise ValueError("input exceeds byte limit")
+        if len(data) > self.remaining:
+            raise ValueError("input exceeds total byte limit")
+        self.remaining -= len(data)
+        try:
+            return parse(data.decode(self.encoding))
+        except LookupError:
+            raise ValueError("unsupported input encoding")
+        except UnicodeError:
+            raise ValueError("cannot decode input")
 
 
 def _write_reports(reports):
