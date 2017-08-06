@@ -260,6 +260,26 @@ class CommandTests(unittest.TestCase):
             for path in (reference, target, output):
                 os.unlink(path)
             os.rmdir(directory)
+
+    def test_output_may_replace_an_input_only_after_comparison_finishes(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--output", reference,
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            with open(reference) as stream:
+                self.assertEqual(stream.read(), "CHANGED A\n")
+        finally:
+            os.unlink(reference)
+            os.unlink(target)
+            os.rmdir(directory)
     def test_reader_rejects_a_source_larger_than_its_byte_limit(self):
         directory = tempfile.mkdtemp()
         try:
