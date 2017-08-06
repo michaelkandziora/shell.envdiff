@@ -12,6 +12,16 @@ from envdiff.cli import (_read_bytes, _read_inputs, _read_layered_inputs,
 
 
 class CommandTests(unittest.TestCase):
+    def test_total_byte_budget_rejects_later_target_without_report(self):
+        result = self.run_many("A=one\n", "A=two\n", "A=three\n",
+                               extra=["--total-bytes", "14"])
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+
+    def test_total_byte_budget_accepts_exact_raw_input_size(self):
+        result = self.run_files("A=é\n", "A=é\n", extra=["--total-bytes", "10"])
+        self.assertEqual(result.returncode, 0)
+
     def test_bounded_reader_continues_after_short_reads(self):
         class ShortReader(object):
             def __init__(self):
@@ -945,7 +955,7 @@ class CommandTests(unittest.TestCase):
                     os.unlink(path)
             os.rmdir(directory)
 
-    def run_many(self, reference, *targets):
+    def run_many(self, reference, *targets, **options):
         directory = tempfile.mkdtemp()
         try:
             paths = []
@@ -954,7 +964,7 @@ class CommandTests(unittest.TestCase):
                 with open(path, "w") as stream:
                     stream.write(contents)
                 paths.append(path)
-            return subprocess.run([sys.executable, "-m", "envdiff"] + paths,
+            return subprocess.run([sys.executable, "-m", "envdiff"] + list(options.get("extra", ())) + paths,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   universal_newlines=True)
         finally:
