@@ -33,6 +33,33 @@ class CommandTests(unittest.TestCase):
             self.assertEqual(os.listdir(directory), [])
         finally:
             os.rmdir(directory)
+
+    def test_output_replace_failure_preserves_existing_destination(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            with open(output, "w") as stream:
+                stream.write("existing\n")
+            with mock.patch("envdiff.cli.os.replace", side_effect=OSError):
+                with self.assertRaises(OSError):
+                    _write_output(output, "CHANGED A\n")
+            with open(output) as stream:
+                self.assertEqual(stream.read(), "existing\n")
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
+
+    def test_byte_limit_accepts_an_exact_multibyte_source_boundary(self):
+        directory = tempfile.mkdtemp()
+        try:
+            path = os.path.join(directory, "latin.env")
+            data = "A=é\n".encode("utf-8")
+            with open(path, "wb") as stream:
+                stream.write(data)
+            self.assertEqual(_read_assignments(path, max_bytes=len(data)), {"A": "é"})
+        finally:
+            os.unlink(path)
+            os.rmdir(directory)
     def test_max_bytes_option_rejects_each_oversized_input_without_report(self):
         result = self.run_files("A=one\n", "A=two\n", extra=["--max-bytes", "5"])
         self.assertEqual(result.returncode, 2)
