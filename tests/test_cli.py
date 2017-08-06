@@ -114,6 +114,44 @@ class CommandTests(unittest.TestCase):
             os.unlink(reference)
             os.rmdir(directory)
 
+    def test_stdin_can_supply_one_layer_base(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=one\n")
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--base", "-",
+                                     reference, target], input="B=base\n",
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "EXTRA B SOURCE BASE 1\n")
+        finally:
+            os.unlink(reference)
+            os.unlink(target)
+            os.rmdir(directory)
+
+    def test_limit_applies_to_a_later_base_before_any_report(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, name) for name in ("reference", "base", "target")]
+            for path, content in zip(paths, ("A=one\n", "B=very-long\n", "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(content)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--max-bytes", "6",
+                                     "--base", paths[1], paths[0], paths[2]],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+        finally:
+            for path in paths:
+                os.unlink(path)
+            os.rmdir(directory)
+
     def test_output_file_receives_complete_text_report(self):
         directory = tempfile.mkdtemp()
         try:
