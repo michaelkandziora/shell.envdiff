@@ -216,6 +216,28 @@ class CommandTests(unittest.TestCase):
                     os.unlink(path)
             os.rmdir(directory)
 
+    def test_quiet_output_destination_remains_empty_with_difference_exit(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            output = os.path.join(directory, "report.txt")
+            for path, contents in ((reference, "A=one\n"), (target, "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--quiet", "--output",
+                                     output, reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stdout, "")
+            with open(output) as stream:
+                self.assertEqual(stream.read(), "")
+        finally:
+            for path in (reference, target, output):
+                if os.path.exists(path):
+                    os.unlink(path)
+            os.rmdir(directory)
+
     def test_output_is_not_touched_when_input_is_invalid(self):
         directory = tempfile.mkdtemp()
         try:
