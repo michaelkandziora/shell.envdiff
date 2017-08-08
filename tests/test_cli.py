@@ -1,5 +1,6 @@
 import io
 import os
+import stat
 import json
 import subprocess
 import sys
@@ -12,6 +13,28 @@ from envdiff.cli import (_read_bytes, _read_inputs, _read_layered_inputs,
 
 
 class CommandTests(unittest.TestCase):
+    def test_output_preserves_existing_ordinary_permission_bits(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            with open(output, "w") as stream:
+                stream.write("old\n")
+            os.chmod(output, 0o640)
+            _write_output(output, "new\n")
+            self.assertEqual(stat.S_IMODE(os.stat(output).st_mode), 0o640)
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
+
+    def test_new_output_uses_private_file_permissions(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            _write_output(output, "new\n")
+            self.assertEqual(stat.S_IMODE(os.stat(output).st_mode), 0o600)
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
     def test_total_byte_budget_rejects_later_target_without_report(self):
         result = self.run_many("A=one\n", "A=two\n", "A=three\n",
                                extra=["--total-bytes", "14"])

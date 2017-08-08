@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import stat
 import sys
 import tempfile
 
@@ -209,8 +210,17 @@ def _render_reports(reports):
 def _write_output(path, content):
     """Replace an output file only after the complete report has been written."""
     directory = os.path.dirname(path) or "."
+    mode = None
+    try:
+        existing = os.lstat(path)
+        if stat.S_ISREG(existing.st_mode):
+            mode = stat.S_IMODE(existing.st_mode)
+    except OSError:
+        pass
     descriptor, temporary = tempfile.mkstemp(prefix=".envdiff-", dir=directory)
     try:
+        if mode is not None:
+            os.fchmod(descriptor, mode)
         with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
             stream.write(content)
         os.replace(temporary, path)
