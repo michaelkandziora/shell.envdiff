@@ -22,6 +22,11 @@ comparison uses another Python codec, and `--max-bytes BYTES` to cap every
 reference, base, and target independently. Read, limit, and decoding failures
 use the same safe error status and do not copy file contents into diagnostics.
 
+Every invocation also has a 64 MiB raw-input budget across its reference,
+bases, and targets, including BOMs and line endings. Use `--total-bytes BYTES`
+to select another positive shared budget. Sources are charged once in read
+order, so a limit failure produces no partial report.
+
 ```sh
 envdiff examples/reference.env examples/target.env examples/target-two.env
 ```
@@ -107,6 +112,9 @@ For example, a single-target JSON report has this shape (keys only):
 Use `--output FILE` to replace a report destination only after all inputs have
 parsed and the complete report is ready. It works with text or `--json`; a
 write failure returns status `2` without reflecting the destination path.
+New report files are private (mode 0600); ordinary rwx permissions of an
+existing regular file are retained. If FILE is a symlink, envdiff atomically
+replaces that link entry rather than writing through it.
 
 ## Development
 
