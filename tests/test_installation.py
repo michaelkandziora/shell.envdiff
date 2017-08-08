@@ -22,6 +22,25 @@ def _run_owned_test_command(command, cwd, environment):
 
 
 class InstallationTests(unittest.TestCase):
+    def test_built_wheel_console_command_enforces_total_input_budget(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        temporary = tempfile.mkdtemp()
+        try:
+            wheel_directory = os.path.join(temporary, "wheel")
+            prefix = os.path.join(temporary, "prefix")
+            subprocess.check_call([sys.executable, "setup.py", "bdist_wheel", "--dist-dir", wheel_directory], cwd=root)
+            wheel = os.path.join(wheel_directory, os.listdir(wheel_directory)[0])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps", "--prefix", prefix, wheel], env=dict(os.environ, PYTHONPATH=""))
+            paths = [os.path.join(temporary, name) for name in ("reference.env", "target.env")]
+            for path in paths:
+                with open(path, "w") as stream:
+                    stream.write("A=one\n")
+            site = next(directory for directory, _, _ in os.walk(prefix) if directory.endswith("site-packages"))
+            result = subprocess.run([os.path.join(prefix, "bin", "envdiff"), "--total-bytes", "10"] + paths, env=dict(os.environ, PYTHONPATH=site), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+        finally:
+            shutil.rmtree(temporary)
     def test_built_wheel_console_command_supports_bounded_output_file(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         temporary = tempfile.mkdtemp()
