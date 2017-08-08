@@ -35,6 +35,25 @@ class CommandTests(unittest.TestCase):
         finally:
             os.unlink(output)
             os.rmdir(directory)
+
+    def test_output_replaces_symlink_entry_without_writing_its_referent(self):
+        directory = tempfile.mkdtemp()
+        referent = os.path.join(directory, "referent.txt")
+        output = os.path.join(directory, "report.txt")
+        try:
+            with open(referent, "w") as stream:
+                stream.write("keep\n")
+            os.symlink(referent, output)
+            _write_output(output, "report\n")
+            self.assertFalse(os.path.islink(output))
+            with open(referent) as stream:
+                self.assertEqual(stream.read(), "keep\n")
+            with open(output) as stream:
+                self.assertEqual(stream.read(), "report\n")
+        finally:
+            os.unlink(referent)
+            os.unlink(output)
+            os.rmdir(directory)
     def test_total_byte_budget_rejects_later_target_without_report(self):
         result = self.run_many("A=one\n", "A=two\n", "A=three\n",
                                extra=["--total-bytes", "14"])
