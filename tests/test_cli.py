@@ -101,6 +101,64 @@ class CommandTests(unittest.TestCase):
             os.unlink(output)
             os.rmdir(directory)
 
+    def test_output_flush_failure_preserves_destination_and_cleans_temporary_file(self):
+        class FlushFailure(object):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, unused_type, unused_value, unused_traceback):
+                return False
+
+            def write(self, unused_content):
+                pass
+
+            def flush(self):
+                raise IOError("flush failed")
+
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            with open(output, "w") as stream:
+                stream.write("existing\n")
+            with mock.patch("envdiff.cli.os.fdopen", return_value=FlushFailure()):
+                with self.assertRaises(IOError):
+                    _write_output(output, "report\n")
+            with open(output) as stream:
+                self.assertEqual(stream.read(), "existing\n")
+            self.assertEqual(os.listdir(directory), ["report.txt"])
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
+
+    def test_output_close_failure_preserves_destination_and_cleans_temporary_file(self):
+        class CloseFailure(object):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, unused_type, unused_value, unused_traceback):
+                raise IOError("close failed")
+
+            def write(self, unused_content):
+                pass
+
+            def flush(self):
+                pass
+
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            with open(output, "w") as stream:
+                stream.write("existing\n")
+            with mock.patch("envdiff.cli.os.fdopen", return_value=CloseFailure()):
+                with self.assertRaises(IOError):
+                    _write_output(output, "report\n")
+            with open(output) as stream:
+                self.assertEqual(stream.read(), "existing\n")
+            self.assertEqual(os.listdir(directory), ["report.txt"])
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
+
     def test_byte_limit_accepts_an_exact_multibyte_source_boundary(self):
         directory = tempfile.mkdtemp()
         try:

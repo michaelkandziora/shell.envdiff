@@ -223,6 +223,7 @@ def _write_output(path, content):
             os.fchmod(descriptor, mode)
         with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
             stream.write(content)
+            stream.flush()
         os.replace(temporary, path)
     except Exception:
         try:
