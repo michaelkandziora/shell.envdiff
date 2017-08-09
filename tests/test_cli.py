@@ -1,6 +1,7 @@
 import io
 import os
 import stat
+import socket
 import json
 import subprocess
 import sys
@@ -86,6 +87,33 @@ class CommandTests(unittest.TestCase):
             self.assertEqual(os.listdir(directory), ["report-directory"])
         finally:
             os.rmdir(output)
+            os.rmdir(directory)
+
+    def test_socket_output_is_rejected_without_replacing_entry_or_tempfile(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.sock")
+        listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            listener.bind(output)
+            with self.assertRaises(IOError):
+                _write_output(output, "report\n")
+            self.assertTrue(stat.S_ISSOCK(os.lstat(output).st_mode))
+            self.assertEqual(os.listdir(directory), ["report.sock"])
+        finally:
+            listener.close()
+            os.unlink(output)
+            os.rmdir(directory)
+
+    def test_device_mode_mock_is_rejected_before_temporary_file_creation(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.device")
+        fake = type("Stat", (), {"st_mode": stat.S_IFCHR | 0o600})()
+        try:
+            with mock.patch("envdiff.cli.os.lstat", return_value=fake):
+                with self.assertRaises(IOError):
+                    _write_output(output, "report\n")
+            self.assertEqual(os.listdir(directory), [])
+        finally:
             os.rmdir(directory)
 
     def test_new_output_uses_private_file_permissions(self):
@@ -216,6 +244,38 @@ class CommandTests(unittest.TestCase):
                     _write_output(output, "report\n")
             with open(output) as stream:
                 self.assertEqual(stream.read(), "existing\n")
+            self.assertEqual(os.listdir(directory), ["report.txt"])
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
+
+    def test_fchmod_failure_closes_raw_descriptor_and_removes_temporary_file(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            with open(output, "w") as stream:
+                stream.write("existing\n")
+            with mock.patch("envdiff.cli.os.fchmod", side_effect=OSError), \
+                    mock.patch("envdiff.cli.os.close", wraps=os.close) as close:
+                with self.assertRaises(OSError):
+                    _write_output(output, "report\n")
+            self.assertTrue(close.called)
+            self.assertEqual(os.listdir(directory), ["report.txt"])
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
+
+    def test_fdopen_failure_closes_raw_descriptor_and_removes_temporary_file(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            with open(output, "w") as stream:
+                stream.write("existing\n")
+            with mock.patch("envdiff.cli.os.fdopen", side_effect=OSError), \
+                    mock.patch("envdiff.cli.os.close", wraps=os.close) as close:
+                with self.assertRaises(OSError):
+                    _write_output(output, "report\n")
+            self.assertTrue(close.called)
             self.assertEqual(os.listdir(directory), ["report.txt"])
         finally:
             os.unlink(output)

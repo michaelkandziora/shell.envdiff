@@ -221,14 +221,18 @@ def _write_output(path, content):
         elif not stat.S_ISLNK(existing.st_mode):
             raise IOError("unsupported report destination")
     descriptor, temporary = tempfile.mkstemp(prefix=".envdiff-", dir=directory)
+    descriptor_open = True
     try:
         if mode is not None:
             os.fchmod(descriptor, mode)
         with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            descriptor_open = False
             stream.write(content)
             stream.flush()
         os.replace(temporary, path)
     except Exception:
+        if descriptor_open:
+            os.close(descriptor)
         try:
             os.unlink(temporary)
         except OSError:
