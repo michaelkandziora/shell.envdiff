@@ -26,6 +26,45 @@ class CommandTests(unittest.TestCase):
             os.unlink(output)
             os.rmdir(directory)
 
+    def test_output_discards_existing_special_permission_bits(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.txt")
+        try:
+            with open(output, "w") as stream:
+                stream.write("old\n")
+            os.chmod(output, 0o6755)
+            _write_output(output, "new\n")
+            self.assertEqual(stat.S_IMODE(os.stat(output).st_mode), 0o755)
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
+
+    def test_fifo_output_is_rejected_without_replacing_entry_or_leaving_tempfile(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.fifo")
+        try:
+            os.mkfifo(output)
+            with self.assertRaises(IOError):
+                _write_output(output, "report\n")
+            self.assertTrue(stat.S_ISFIFO(os.lstat(output).st_mode))
+            self.assertEqual(os.listdir(directory), ["report.fifo"])
+        finally:
+            os.unlink(output)
+            os.rmdir(directory)
+
+    def test_directory_output_is_rejected_without_temporary_file(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report-directory")
+        os.mkdir(output)
+        try:
+            with self.assertRaises(IOError):
+                _write_output(output, "report\n")
+            self.assertTrue(os.path.isdir(output))
+            self.assertEqual(os.listdir(directory), ["report-directory"])
+        finally:
+            os.rmdir(output)
+            os.rmdir(directory)
+
     def test_new_output_uses_private_file_permissions(self):
         directory = tempfile.mkdtemp()
         output = os.path.join(directory, "report.txt")

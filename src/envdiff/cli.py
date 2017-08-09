@@ -213,10 +213,13 @@ def _write_output(path, content):
     mode = None
     try:
         existing = os.lstat(path)
-        if stat.S_ISREG(existing.st_mode):
-            mode = stat.S_IMODE(existing.st_mode)
     except OSError:
-        pass
+        existing = None
+    if existing is not None:
+        if stat.S_ISREG(existing.st_mode):
+            mode = stat.S_IMODE(existing.st_mode) & 0o777
+        elif not stat.S_ISLNK(existing.st_mode):
+            raise IOError("unsupported report destination")
     descriptor, temporary = tempfile.mkstemp(prefix=".envdiff-", dir=directory)
     try:
         if mode is not None:
