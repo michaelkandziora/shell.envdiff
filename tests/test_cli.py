@@ -52,6 +52,29 @@ class CommandTests(unittest.TestCase):
             os.unlink(output)
             os.rmdir(directory)
 
+    def test_command_reports_fifo_destination_error_without_normal_output(self):
+        directory = tempfile.mkdtemp()
+        output = os.path.join(directory, "report.fifo")
+        reference = os.path.join(directory, "reference.env")
+        target = os.path.join(directory, "target.env")
+        try:
+            os.mkfifo(output)
+            for path, contents in ((reference, "A=one\n"), (target, "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(contents)
+            result = subprocess.run([sys.executable, "-m", "envdiff", "--output", output,
+                                     reference, target], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, universal_newlines=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertTrue(result.stderr.startswith("envdiff:"))
+            self.assertTrue(stat.S_ISFIFO(os.lstat(output).st_mode))
+        finally:
+            os.unlink(output)
+            os.unlink(reference)
+            os.unlink(target)
+            os.rmdir(directory)
+
     def test_directory_output_is_rejected_without_temporary_file(self):
         directory = tempfile.mkdtemp()
         output = os.path.join(directory, "report-directory")
