@@ -115,6 +115,15 @@ write failure returns status `2` without reflecting the destination path.
 New report files are private (mode 0600); ordinary rwx permissions of an
 existing regular file are retained. If FILE is a symlink, envdiff atomically
 replaces that link entry rather than writing through it.
+Output destinations are limited to a missing path, an existing regular file,
+or a symlink. A FIFO, socket, device, or directory is rejected with status 2
+and left unchanged. On an existing regular file only ordinary rwx permission
+bits are preserved; setuid, setgid, and sticky bits are deliberately removed.
+Ownership and ACL preservation, and crash-durability guarantees, are outside
+this contract. Failures during fchmod, fdopen, write, flush, close, or
+replacement return status 2 and preserve the destination; normal failure
+handling attempts to remove temporary files and close descriptors, without a
+stronger guarantee if a cleanup operation itself fails.
 
 ## Development
 
