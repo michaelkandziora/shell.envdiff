@@ -1,6 +1,8 @@
 """Immutable public comparison result contracts."""
 from collections import namedtuple
 
+from .core import compare_effective_targets, compare_targets
+
 
 class Difference(namedtuple("DifferenceBase", "missing extra changed")):
     """Sorted key-only difference categories, stored as immutable tuples."""
@@ -30,3 +32,25 @@ class ComparisonResult(namedtuple("ComparisonResultBase", "targets")):
 
     def __new__(cls, targets=()):
         return super(ComparisonResult, cls).__new__(cls, tuple(targets))
+
+
+def compare_mappings(reference, targets, bases=()):
+    """Compare mapping inputs through the same ordered comparison core as the CLI."""
+    reports = (compare_effective_targets(reference, bases, targets)
+               if bases else compare_targets(reference, targets))
+    return result_from_reports(reports)
+
+
+def result_from_reports(reports):
+    """Freeze completed internal reports into the public result contract."""
+    targets = []
+    for item in reports:
+        report = item["report"]
+        difference = Difference(report["missing"], report["extra"], report["changed"])
+        sources = []
+        for kind in ("missing", "extra", "changed"):
+            for key in report[kind]:
+                role, ordinal = item.get("sources", {}).get(key, ("REFERENCE", 1))
+                sources.append(Source(key, role, ordinal))
+        targets.append(TargetResult(item["target"], difference, sources))
+    return ComparisonResult(targets)
