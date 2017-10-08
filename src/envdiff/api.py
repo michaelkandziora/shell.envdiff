@@ -46,6 +46,20 @@ def compare_mappings(reference, targets, bases=()):
     return result_from_reports(reports)
 
 
+def compare_files(reference_path, target_paths, base_paths=(), max_bytes=None,
+                  encoding="utf-8", total_bytes=None):
+    """Compare file sources once, returning a value-free public input error."""
+    from .cli import DEFAULT_TOTAL_BYTES, _read_layered_inputs
+    if total_bytes is None:
+        total_bytes = DEFAULT_TOTAL_BYTES
+    try:
+        reference, bases, targets = _read_layered_inputs(
+            reference_path, base_paths, target_paths, max_bytes, encoding, total_bytes)
+    except (IOError, UnicodeError, ValueError):
+        return ComparisonError("input")
+    return compare_mappings(reference, targets, bases)
+
+
 def result_from_reports(reports):
     """Freeze completed internal reports into the public result contract."""
     targets = []
