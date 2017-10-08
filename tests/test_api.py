@@ -1,6 +1,9 @@
 import unittest
 import os
 import tempfile
+import json
+import subprocess
+import sys
 
 from envdiff import (ComparisonError, ComparisonResult, Difference, TargetResult,
                      compare_files, compare_mappings)
@@ -26,6 +29,27 @@ class PublicResultTests(unittest.TestCase):
         result = compare_files("private-missing.env", ["private-target.env"])
         self.assertEqual(result, ComparisonError("input"))
         self.assertNotIn("private", repr(result))
+
+    def test_public_file_api_matches_cli_json_for_layered_result(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, name) for name in ("reference", "base", "target")]
+            for path, text in zip(paths, ("A=one\n", "B=base\n", "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(text)
+            result = compare_files(paths[0], [paths[2]], [paths[1]])
+            command = subprocess.run([sys.executable, "-m", "envdiff", "--json", "--base",
+                                      paths[1], paths[0], paths[2]], stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE, universal_newlines=True)
+            document = json.loads(command.stdout)
+            self.assertEqual(document["targets"][0]["changed"],
+                             list(result.targets[0].difference.changed))
+            self.assertEqual(document["targets"][0]["extra"],
+                             list(result.targets[0].difference.extra))
+        finally:
+            for path in paths:
+                os.unlink(path)
+            os.rmdir(directory)
     def test_public_error_contract_does_not_retain_sensitive_detail(self):
         error = ComparisonError("input")
         self.assertEqual(error.kind, "input")
