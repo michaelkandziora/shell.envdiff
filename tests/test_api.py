@@ -20,6 +20,11 @@ class PublicResultTests(unittest.TestCase):
         result = compare_mappings({"A": "one"}, [{"A": "two"}, {"A": "one"}])
         self.assertEqual([item.target for item in result.targets], [1, 2])
         self.assertEqual(result.targets[1].difference, Difference())
+
+    def test_public_api_retains_layer_source_metadata(self):
+        result = compare_mappings({"A": "one"}, [{"A": "two"}], [{"B": "base"}])
+        self.assertEqual(result.targets[0].sources,
+                         (("B", "BASE", 1), ("A", "TARGET", 1)))
     def test_public_result_is_deeply_immutable(self):
         difference = Difference(("MISSING",), ("EXTRA",), ("CHANGED",))
         result = ComparisonResult((TargetResult(1, difference, ()),))
