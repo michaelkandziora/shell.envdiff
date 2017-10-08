@@ -34,6 +34,11 @@ class ComparisonResult(namedtuple("ComparisonResultBase", "targets")):
         return super(ComparisonResult, cls).__new__(cls, tuple(targets))
 
 
+class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
+    """Stable, detail-free public failure category for comparison boundaries."""
+    __slots__ = ()
+
+
 def compare_mappings(reference, targets, bases=()):
     """Compare mapping inputs through the same ordered comparison core as the CLI."""
     reports = (compare_effective_targets(reference, bases, targets)
