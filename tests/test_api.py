@@ -1,9 +1,16 @@
 import unittest
 
-from envdiff import ComparisonResult, Difference, TargetResult, compare_mappings
+from envdiff import (ComparisonError, ComparisonResult, Difference, TargetResult,
+                     compare_mappings)
 
 
 class PublicResultTests(unittest.TestCase):
+    def test_public_error_contract_does_not_retain_sensitive_detail(self):
+        error = ComparisonError("input")
+        self.assertEqual(error.kind, "input")
+        self.assertNotIn("secret", repr(error))
+        with self.assertRaises(AttributeError):
+            error.kind = "other"
     def test_public_api_compares_one_mapping_target(self):
         result = compare_mappings({"A": "one", "B": "one"}, [{"A": "two", "C": "two"}])
         self.assertEqual(result.targets[0].difference,
