@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 from . import __version__
-from .api import result_from_reports
+from .api import ComparisonError, result_from_reports
 from .core import (compare_effective_targets, compare_targets, filter_reports,
                    has_differences, key_set_reports, parse)
 
@@ -52,12 +52,8 @@ def main(argv=None):
         reference, bases, targets = _read_layered_inputs(args.reference, args.base,
                                                          args.target, args.max_bytes,
                                                          args.encoding, args.total_bytes)
-    except (IOError, UnicodeError):
-        print("envdiff: cannot read UTF-8 input", file=sys.stderr)
-        return 2
-    except ValueError as exc:
-        print("envdiff: {0}".format(exc), file=sys.stderr)
-        return 2
+    except (IOError, UnicodeError, ValueError):
+        return _write_error(ComparisonError("input"))
     reports = (compare_effective_targets(reference, bases, targets)
                if bases else compare_targets(reference, targets))
     reports = filter_reports(reports, args.include, args.exclude)
@@ -74,9 +70,12 @@ def main(argv=None):
             _write_output(args.output, content)
         elif content:
             sys.stdout.write(content)
-    except IOError:
-        print("envdiff: cannot write report", file=sys.stderr)
-        return 2
+            sys.stdout.flush()
+    except IOError as exc:
+        if isinstance(exc, BrokenPipeError):
+            _silence_broken_stdout()
+            return 0
+        return _write_error(ComparisonError("output"))
     return 1 if _result_has_differences(result) else 0
 
 
@@ -126,6 +125,26 @@ def _positive_bytes(value):
     if number < 1:
         raise argparse.ArgumentTypeError("invalid byte count")
     return number
+
+
+def _write_error(error):
+    """Translate the shared detail-free public error contract for the CLI."""
+    messages = {"input": "envdiff: cannot read input",
+                "output": "envdiff: cannot write report"}
+    print(messages.get(error.kind, "envdiff: comparison failed"), file=sys.stderr)
+    return 2
+
+
+def _silence_broken_stdout():
+    """Avoid a second buffered flush failure after a downstream pipe closes."""
+    try:
+        null = os.open(os.devnull, os.O_WRONLY)
+        try:
+            os.dup2(null, sys.stdout.fileno())
+        finally:
+            os.close(null)
+    except (IOError, AttributeError):
+        pass
 
 
 def _read_assignments(path, max_bytes=None, encoding="utf-8", stdin=None):

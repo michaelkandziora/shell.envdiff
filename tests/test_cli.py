@@ -90,11 +90,17 @@ class CommandTests(unittest.TestCase):
 
             with mock.patch("envdiff.cli.sys.stdout", BrokenOutput()):
                 from envdiff.cli import main
-                self.assertEqual(main([reference, target]), 2)
+                self.assertEqual(main([reference, target]), 0)
         finally:
             os.unlink(reference)
             os.unlink(target)
             os.rmdir(directory)
+
+    def test_text_subprocess_broken_pipe_has_no_traceback_or_exit_120(self):
+        self._assert_subprocess_pipe_closure(())
+
+    def test_json_subprocess_broken_pipe_has_no_traceback_or_exit_120(self):
+        self._assert_subprocess_pipe_closure(("--json",))
 
     def test_directory_output_is_rejected_without_temporary_file(self):
         directory = tempfile.mkdtemp()
@@ -1195,6 +1201,28 @@ class CommandTests(unittest.TestCase):
                 path = os.path.join(directory, filename)
                 if os.path.exists(path):
                     os.unlink(path)
+            os.rmdir(directory)
+
+    def _assert_subprocess_pipe_closure(self, options):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            with open(reference, "w") as stream:
+                stream.write("A=one\n")
+            with open(target, "w") as stream:
+                stream.write("A=two\n")
+            process = subprocess.Popen([sys.executable, "-m", "envdiff"] + list(options) +
+                                       [reference, target], stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE, universal_newlines=True)
+            process.stdout.close()
+            stderr = process.stderr.read()
+            process.stderr.close()
+            self.assertEqual(process.wait(), 0)
+            self.assertNotIn("Traceback", stderr)
+        finally:
+            os.unlink(reference)
+            os.unlink(target)
             os.rmdir(directory)
 
     def run_many(self, reference, *targets, **options):
