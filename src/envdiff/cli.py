@@ -74,7 +74,7 @@ def main(argv=None):
     except IOError as exc:
         if isinstance(exc, BrokenPipeError):
             _silence_broken_stdout()
-            return 0
+            return _write_error(ComparisonError("output"))
         return _write_error(ComparisonError("output"))
     return 1 if _result_has_differences(result) else 0
 

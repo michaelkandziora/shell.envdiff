@@ -90,7 +90,7 @@ class CommandTests(unittest.TestCase):
 
             with mock.patch("envdiff.cli.sys.stdout", BrokenOutput()):
                 from envdiff.cli import main
-                self.assertEqual(main([reference, target]), 0)
+                self.assertEqual(main([reference, target]), 2)
         finally:
             os.unlink(reference)
             os.unlink(target)
@@ -1218,7 +1218,7 @@ class CommandTests(unittest.TestCase):
             process.stdout.close()
             stderr = process.stderr.read()
             process.stderr.close()
-            self.assertEqual(process.wait(), 0)
+            self.assertEqual(process.wait(), 2)
             self.assertNotIn("Traceback", stderr)
         finally:
             os.unlink(reference)
