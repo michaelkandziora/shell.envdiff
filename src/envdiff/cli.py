@@ -7,6 +7,7 @@ import sys
 import tempfile
 
 from . import __version__
+from .api import result_from_reports
 from .core import (compare_effective_targets, compare_targets, filter_reports,
                    has_differences, key_set_reports, parse)
 
@@ -63,10 +64,11 @@ def main(argv=None):
     if args.keys_only:
         reports = key_set_reports(reports)
     content = ""
+    result = result_from_reports(reports)
     if args.json:
-        content = json.dumps(_json_report(reports), sort_keys=True) + "\n"
+        content = json.dumps(_json_result(result), sort_keys=True) + "\n"
     elif not args.quiet:
-        content = _render_reports(reports)
+        content = _render_result(result)
     try:
         if args.output:
             _write_output(args.output, content)
@@ -75,7 +77,7 @@ def main(argv=None):
     except IOError:
         print("envdiff: cannot write report", file=sys.stderr)
         return 2
-    return 1 if has_differences(reports) else 0
+    return 1 if _result_has_differences(result) else 0
 
 
 def _json_report(reports):
@@ -93,6 +95,26 @@ def _json_report(reports):
             report["sources"] = sources
         targets.append(report)
     return {"schema_version": 1, "targets": targets}
+
+
+def _json_result(result):
+    """Serialize the public immutable result without changing the JSON contract."""
+    targets = []
+    for item in result.targets:
+        report = {"target": item.target, "missing": list(item.difference.missing),
+                  "extra": list(item.difference.extra),
+                  "changed": list(item.difference.changed)}
+        if item.sources:
+            report["sources"] = [{"key": source.key, "role": source.role,
+                                  "ordinal": source.ordinal}
+                                 for source in item.sources]
+        targets.append(report)
+    return {"schema_version": 1, "targets": targets}
+
+
+def _result_has_differences(result):
+    return any(item.difference.missing or item.difference.extra or item.difference.changed
+               for item in result.targets)
 
 
 def _positive_bytes(value):
@@ -204,6 +226,24 @@ def _write_reports(reports):
 def _render_reports(reports):
     """Render all normal report lines before a destination is opened."""
     lines = _report_lines(reports)
+    return "".join(line + "\n" for line in lines)
+
+
+def _render_result(result):
+    """Render the public result while retaining established text ordering."""
+    lines = []
+    multiple = len(result.targets) > 1
+    for item in result.targets:
+        if multiple:
+            lines.append("TARGET {0}".format(item.target))
+        source_by_key = {source.key: source for source in item.sources}
+        for kind in ("missing", "extra", "changed"):
+            for key in getattr(item.difference, kind):
+                line = "{0} {1}".format(kind.upper(), key)
+                source = source_by_key.get(key)
+                if source is not None:
+                    line += " SOURCE {0} {1}".format(source.role, source.ordinal)
+                lines.append(line)
     return "".join(line + "\n" for line in lines)
 
 

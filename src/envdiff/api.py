@@ -67,9 +67,10 @@ def result_from_reports(reports):
         report = item["report"]
         difference = Difference(report["missing"], report["extra"], report["changed"])
         sources = []
-        for kind in ("missing", "extra", "changed"):
-            for key in report[kind]:
-                role, ordinal = item.get("sources", {}).get(key, ("REFERENCE", 1))
-                sources.append(Source(key, role, ordinal))
+        if "sources" in item:
+            for kind in ("missing", "extra", "changed"):
+                for key in report[kind]:
+                    role, ordinal = item["sources"].get(key, ("REFERENCE", 1))
+                    sources.append(Source(key, role, ordinal))
         targets.append(TargetResult(item["target"], difference, sources))
     return ComparisonResult(targets)
