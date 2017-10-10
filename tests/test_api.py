@@ -56,6 +56,12 @@ class PublicResultTests(unittest.TestCase):
         self.assertNotIn("secret", repr(error))
         with self.assertRaises(AttributeError):
             error.kind = "other"
+
+    def test_public_mapping_api_normalizes_malformed_input_to_detail_free_error(self):
+        result = compare_mappings(None, [{"PRIVATE": "secret"}])
+        self.assertEqual(result, ComparisonError("input"))
+        self.assertNotIn("PRIVATE", repr(result))
+        self.assertNotIn("secret", repr(result))
     def test_public_api_compares_one_mapping_target(self):
         result = compare_mappings({"A": "one", "B": "one"}, [{"A": "two", "C": "two"}])
         self.assertEqual(result.targets[0].difference,
