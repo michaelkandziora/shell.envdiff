@@ -76,6 +76,26 @@ class CommandTests(unittest.TestCase):
             os.unlink(target)
             os.rmdir(directory)
 
+    def test_broken_stdout_pipe_returns_controlled_status(self):
+        directory = tempfile.mkdtemp()
+        try:
+            reference = os.path.join(directory, "reference.env")
+            target = os.path.join(directory, "target.env")
+            for path, text in ((reference, "A=one\n"), (target, "A=two\n")):
+                with open(path, "w") as stream:
+                    stream.write(text)
+            class BrokenOutput(object):
+                def write(self, unused):
+                    raise BrokenPipeError()
+
+            with mock.patch("envdiff.cli.sys.stdout", BrokenOutput()):
+                from envdiff.cli import main
+                self.assertEqual(main([reference, target]), 2)
+        finally:
+            os.unlink(reference)
+            os.unlink(target)
+            os.rmdir(directory)
+
     def test_directory_output_is_rejected_without_temporary_file(self):
         directory = tempfile.mkdtemp()
         output = os.path.join(directory, "report-directory")
