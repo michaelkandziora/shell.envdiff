@@ -76,6 +76,11 @@ class PublicResultTests(unittest.TestCase):
         result = compare_mappings({"A": "one"}, [{"A": "two"}], [{"B": "base"}])
         self.assertEqual(result.targets[0].sources,
                          (("B", "BASE", 1), ("A", "TARGET", 1)))
+
+    def test_public_api_applies_filters_and_keys_only_like_cli(self):
+        result = compare_mappings({"A": "one", "B": "one"}, [{"A": "two", "C": "two"}],
+                                  includes=("A", "C"), keys_only=True)
+        self.assertEqual(result.targets[0].difference, Difference((), ("C",), ()))
     def test_public_result_is_deeply_immutable(self):
         difference = Difference(("MISSING",), ("EXTRA",), ("CHANGED",))
         result = ComparisonResult((TargetResult(1, difference, ()),))
