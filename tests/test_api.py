@@ -85,6 +85,12 @@ class PublicResultTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             result.targets[0].difference.changed = ()
 
+    def test_public_result_types_reject_mutable_nested_contract_values(self):
+        with self.assertRaises(ValueError):
+            Difference((["mutable"],), (), ())
+        with self.assertRaises(ValueError):
+            TargetResult([], Difference())
+
     def test_public_result_representation_contains_only_contract_metadata(self):
         result = ComparisonResult((TargetResult(1, Difference((), (), ("PORT",)), ()),))
         self.assertIn("PORT", repr(result))
