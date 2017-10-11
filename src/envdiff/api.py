@@ -9,13 +9,20 @@ class Difference(namedtuple("DifferenceBase", "missing extra changed")):
     __slots__ = ()
 
     def __new__(cls, missing=(), extra=(), changed=()):
-        return super(Difference, cls).__new__(cls, tuple(missing), tuple(extra),
-                                              tuple(changed))
+        categories = tuple(tuple(category) for category in (missing, extra, changed))
+        if not all(isinstance(key, str) for category in categories for key in category):
+            raise ValueError("invalid result contract")
+        return super(Difference, cls).__new__(cls, *categories)
 
 
 class Source(namedtuple("SourceBase", "key role ordinal")):
     """Value-free provenance for a selected difference key."""
     __slots__ = ()
+
+    def __new__(cls, key, role, ordinal):
+        if not isinstance(key, str) or not isinstance(role, str) or not isinstance(ordinal, int):
+            raise ValueError("invalid result contract")
+        return super(Source, cls).__new__(cls, key, role, ordinal)
 
 
 class TargetResult(namedtuple("TargetResultBase", "target difference sources")):
@@ -23,7 +30,11 @@ class TargetResult(namedtuple("TargetResultBase", "target difference sources")):
     __slots__ = ()
 
     def __new__(cls, target, difference, sources=()):
-        return super(TargetResult, cls).__new__(cls, target, difference, tuple(sources))
+        sources = tuple(sources)
+        if not isinstance(target, int) or not isinstance(difference, Difference) or not all(
+                isinstance(source, Source) for source in sources):
+            raise ValueError("invalid result contract")
+        return super(TargetResult, cls).__new__(cls, target, difference, sources)
 
 
 class ComparisonResult(namedtuple("ComparisonResultBase", "targets")):
@@ -31,7 +42,10 @@ class ComparisonResult(namedtuple("ComparisonResultBase", "targets")):
     __slots__ = ()
 
     def __new__(cls, targets=()):
-        return super(ComparisonResult, cls).__new__(cls, tuple(targets))
+        targets = tuple(targets)
+        if not all(isinstance(target, TargetResult) for target in targets):
+            raise ValueError("invalid result contract")
+        return super(ComparisonResult, cls).__new__(cls, targets)
 
 
 class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
