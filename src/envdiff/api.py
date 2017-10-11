@@ -41,9 +41,12 @@ class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
 
 def compare_mappings(reference, targets, bases=()):
     """Compare mapping inputs through the same ordered comparison core as the CLI."""
-    reports = (compare_effective_targets(reference, bases, targets)
-               if bases else compare_targets(reference, targets))
-    return result_from_reports(reports)
+    try:
+        reports = (compare_effective_targets(reference, bases, targets)
+                   if bases else compare_targets(reference, targets))
+        return result_from_reports(reports)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return ComparisonError("input")
 
 
 def compare_files(reference_path, target_paths, base_paths=(), max_bytes=None,
