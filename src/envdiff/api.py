@@ -97,3 +97,18 @@ def result_from_reports(reports):
                     sources.append(Source(key, role, ordinal))
         targets.append(TargetResult(item["target"], difference, sources))
     return ComparisonResult(targets)
+
+
+def result_document(result):
+    """Return the stable value-free document shared by API and CLI JSON output."""
+    targets = []
+    for item in result.targets:
+        report = {"target": item.target, "missing": list(item.difference.missing),
+                  "extra": list(item.difference.extra),
+                  "changed": list(item.difference.changed)}
+        if item.sources:
+            report["sources"] = [{"key": source.key, "role": source.role,
+                                  "ordinal": source.ordinal}
+                                 for source in item.sources]
+        targets.append(report)
+    return {"schema_version": 1, "targets": targets}

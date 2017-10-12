@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 from . import __version__
-from .api import ComparisonError, result_from_reports
+from .api import ComparisonError, result_document, result_from_reports
 from .core import (compare_effective_targets, compare_targets, filter_reports,
                    has_differences, key_set_reports, parse)
 
@@ -62,7 +62,7 @@ def main(argv=None):
     content = ""
     result = result_from_reports(reports)
     if args.json:
-        content = json.dumps(_json_result(result), sort_keys=True) + "\n"
+        content = json.dumps(result_document(result), sort_keys=True) + "\n"
     elif not args.quiet:
         content = _render_result(result)
     try:
