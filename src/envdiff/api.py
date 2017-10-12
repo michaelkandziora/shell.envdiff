@@ -1,7 +1,8 @@
 """Immutable public comparison result contracts."""
 from collections import namedtuple
 
-from .core import compare_effective_targets, compare_targets
+from .core import (compare_effective_targets, compare_targets, filter_reports,
+                   key_set_reports)
 
 
 class Difference(namedtuple("DifferenceBase", "missing extra changed")):
@@ -53,18 +54,23 @@ class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
     __slots__ = ()
 
 
-def compare_mappings(reference, targets, bases=()):
+def compare_mappings(reference, targets, bases=(), includes=(), excludes=(),
+                     keys_only=False):
     """Compare mapping inputs through the same ordered comparison core as the CLI."""
     try:
         reports = (compare_effective_targets(reference, bases, targets)
                    if bases else compare_targets(reference, targets))
+        reports = filter_reports(reports, includes, excludes)
+        if keys_only:
+            reports = key_set_reports(reports)
         return result_from_reports(reports)
     except (AttributeError, KeyError, TypeError, ValueError):
         return ComparisonError("input")
 
 
 def compare_files(reference_path, target_paths, base_paths=(), max_bytes=None,
-                  encoding="utf-8", total_bytes=None):
+                  encoding="utf-8", total_bytes=None, includes=(), excludes=(),
+                  keys_only=False):
     """Compare file sources once, returning a value-free public input error."""
     from .cli import DEFAULT_TOTAL_BYTES, _read_layered_inputs
     if total_bytes is None:
@@ -74,7 +80,7 @@ def compare_files(reference_path, target_paths, base_paths=(), max_bytes=None,
             reference_path, base_paths, target_paths, max_bytes, encoding, total_bytes)
     except (IOError, UnicodeError, ValueError):
         return ComparisonError("input")
-    return compare_mappings(reference, targets, bases)
+    return compare_mappings(reference, targets, bases, includes, excludes, keys_only)
 
 
 def result_from_reports(reports):
