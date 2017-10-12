@@ -125,6 +125,24 @@ replacement return status 2 and preserve the destination; normal failure
 handling attempts to remove temporary files and close descriptors, without a
 stronger guarantee if a cleanup operation itself fails.
 
+## Public API
+
+`envdiff` also exposes `compare_mappings` and `compare_files`. Both return an
+immutable `ComparisonResult` containing ordered immutable `TargetResult`,
+`Difference`, and `Source` records; each record contains only key names,
+roles, and ordinals. `compare_mappings` accepts reference and target mappings
+plus optional bases, include/exclude globs, and `keys_only`. `compare_files`
+uses the same read, decode, layer, compare, and filter core as the command.
+Malformed public input or unreadable sources return `ComparisonError("input")`;
+the error contract never retains paths, values, or source contents.
+
+```python
+from envdiff import compare_mappings
+
+result = compare_mappings({"PORT": "one"}, [{"PORT": "two"}])
+assert result.targets[0].difference.changed == ("PORT",)
+```
+
 ## Development
 
 From a source checkout, run the suite with the source package on the import
