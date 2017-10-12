@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 from envdiff import (ComparisonError, ComparisonResult, Difference, TargetResult,
-                     compare_files, compare_mappings)
+                     compare_files, compare_mappings, result_document)
 
 
 class PublicResultTests(unittest.TestCase):
@@ -81,6 +81,12 @@ class PublicResultTests(unittest.TestCase):
         result = compare_mappings({"A": "one", "B": "one"}, [{"A": "two", "C": "two"}],
                                   includes=("A", "C"), keys_only=True)
         self.assertEqual(result.targets[0].difference, Difference((), ("C",), ()))
+
+    def test_public_result_document_matches_versioned_cli_shape(self):
+        result = compare_mappings({"A": "one"}, [{"A": "two"}])
+        self.assertEqual(result_document(result), {"schema_version": 1,
+                         "targets": [{"target": 1, "missing": [], "extra": [],
+                                      "changed": ["A"]}]})
     def test_public_result_is_deeply_immutable(self):
         difference = Difference(("MISSING",), ("EXTRA",), ("CHANGED",))
         result = ComparisonResult((TargetResult(1, difference, ()),))
