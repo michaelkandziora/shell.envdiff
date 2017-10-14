@@ -30,6 +30,20 @@ class PublicResultTests(unittest.TestCase):
         self.assertEqual(result, ComparisonError("input"))
         self.assertNotIn("private", repr(result))
 
+    def test_public_file_api_preserves_budget_error_contract(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, name) for name in ("reference", "target")]
+            for path in paths:
+                with open(path, "w") as stream:
+                    stream.write("A=one\n")
+            self.assertEqual(compare_files(paths[0], [paths[1]], total_bytes=10),
+                             ComparisonError("input"))
+        finally:
+            for path in paths:
+                os.unlink(path)
+            os.rmdir(directory)
+
     def test_public_file_api_matches_cli_json_for_layered_result(self):
         directory = tempfile.mkdtemp()
         try:
