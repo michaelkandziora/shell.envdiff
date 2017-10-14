@@ -5,7 +5,7 @@ import json
 import subprocess
 import sys
 
-from envdiff import (ComparisonError, ComparisonResult, Difference, TargetResult,
+from envdiff import (ComparisonError, ComparisonResult, Difference, Source, TargetResult,
                      compare_files, compare_mappings, result_document)
 
 
@@ -29,6 +29,19 @@ class PublicResultTests(unittest.TestCase):
         result = compare_files("private-missing.env", ["private-target.env"])
         self.assertEqual(result, ComparisonError("input"))
         self.assertNotIn("private", repr(result))
+
+    def test_public_file_api_normalizes_invalid_argument_types(self):
+        self.assertEqual(compare_files("reference", None), ComparisonError("input"))
+        self.assertEqual(compare_files("reference", ["target"], encoding=7),
+                         ComparisonError("input"))
+
+    def test_public_apis_require_at_least_one_target(self):
+        self.assertEqual(compare_mappings({"A": "one"}, []), ComparisonError("input"))
+        self.assertEqual(compare_files("reference", []), ComparisonError("input"))
+
+    def test_public_iterable_targets_are_materialized_once(self):
+        result = compare_mappings({"A": "one"}, (target for target in [{"A": "two"}]))
+        self.assertEqual(result.targets[0].difference.changed, ("A",))
 
     def test_public_file_api_preserves_budget_error_contract(self):
         directory = tempfile.mkdtemp()
@@ -115,6 +128,15 @@ class PublicResultTests(unittest.TestCase):
             Difference((["mutable"],), (), ())
         with self.assertRaises(ValueError):
             TargetResult([], Difference())
+
+    def test_public_metadata_constructors_reject_unknown_categories_and_bool_ordinals(self):
+        for constructor, args in ((ComparisonError, ("secret-path",)),
+                                  (Source, ("KEY", "private-role", 1)),
+                                  (Source, ("KEY", "BASE", True)),
+                                  (TargetResult, (True, Difference()))):
+            with self.subTest(constructor=constructor):
+                with self.assertRaises(ValueError):
+                    constructor(*args)
 
     def test_public_result_representation_contains_only_contract_metadata(self):
         result = ComparisonResult((TargetResult(1, Difference((), (), ("PORT",)), ()),))
