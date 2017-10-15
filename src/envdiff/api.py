@@ -18,6 +18,15 @@ class Difference(namedtuple("DifferenceBase", "missing extra changed")):
             raise ValueError("invalid result contract")
         return super(Difference, cls).__new__(cls, *categories)
 
+    @classmethod
+    def _make(cls, iterable):
+        return cls(*tuple(iterable))
+
+    def _replace(self, **changes):
+        return self.__class__(changes.get("missing", self.missing),
+                              changes.get("extra", self.extra),
+                              changes.get("changed", self.changed))
+
 
 class Source(namedtuple("SourceBase", "key role ordinal")):
     """Value-free provenance for a selected difference key."""
@@ -28,6 +37,14 @@ class Source(namedtuple("SourceBase", "key role ordinal")):
                 isinstance(ordinal, bool) or not isinstance(ordinal, int) or ordinal < 1):
             raise ValueError("invalid result contract")
         return super(Source, cls).__new__(cls, key, role, ordinal)
+
+    @classmethod
+    def _make(cls, iterable):
+        return cls(*tuple(iterable))
+
+    def _replace(self, **changes):
+        return self.__class__(changes.get("key", self.key), changes.get("role", self.role),
+                              changes.get("ordinal", self.ordinal))
 
 
 class TargetResult(namedtuple("TargetResultBase", "target difference sources")):
@@ -42,6 +59,15 @@ class TargetResult(namedtuple("TargetResultBase", "target difference sources")):
             raise ValueError("invalid result contract")
         return super(TargetResult, cls).__new__(cls, target, difference, sources)
 
+    @classmethod
+    def _make(cls, iterable):
+        return cls(*tuple(iterable))
+
+    def _replace(self, **changes):
+        return self.__class__(changes.get("target", self.target),
+                              changes.get("difference", self.difference),
+                              changes.get("sources", self.sources))
+
 
 class ComparisonResult(namedtuple("ComparisonResultBase", "targets")):
     """An ordered immutable multi-target comparison result."""
@@ -53,6 +79,13 @@ class ComparisonResult(namedtuple("ComparisonResultBase", "targets")):
             raise ValueError("invalid result contract")
         return super(ComparisonResult, cls).__new__(cls, targets)
 
+    @classmethod
+    def _make(cls, iterable):
+        return cls(*tuple(iterable))
+
+    def _replace(self, **changes):
+        return self.__class__(changes.get("targets", self.targets))
+
 
 class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
     """Stable, detail-free public failure category for comparison boundaries."""
@@ -62,6 +95,13 @@ class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
         if kind not in _ERROR_KINDS:
             raise ValueError("invalid error contract")
         return super(ComparisonError, cls).__new__(cls, kind)
+
+    @classmethod
+    def _make(cls, iterable):
+        return cls(*tuple(iterable))
+
+    def _replace(self, **changes):
+        return self.__class__(changes.get("kind", self.kind))
 
 
 def compare_mappings(reference, targets, bases=(), includes=(), excludes=(),
