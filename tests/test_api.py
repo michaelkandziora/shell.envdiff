@@ -144,6 +144,14 @@ class PublicResultTests(unittest.TestCase):
             TargetResult._make((True, Difference(), ()))
         with self.assertRaises(ValueError):
             result._replace(target=True)
+        with self.assertRaises(ValueError):
+            Difference._make(((["mutable"],), (), ()))
+        with self.assertRaises(ValueError):
+            Source("KEY", "BASE", 1)._replace(ordinal=True)
+        with self.assertRaises(ValueError):
+            ComparisonResult._make(((["mutable"],),))
+        with self.assertRaises(ValueError):
+            ComparisonError("input")._replace(kind="private")
 
     def test_public_result_representation_contains_only_contract_metadata(self):
         result = ComparisonResult((TargetResult(1, Difference((), (), ("PORT",)), ()),))
