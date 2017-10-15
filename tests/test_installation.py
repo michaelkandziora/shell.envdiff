@@ -32,10 +32,10 @@ class InstallationTests(unittest.TestCase):
             wheel = os.path.join(wheel_directory, os.listdir(wheel_directory)[0])
             subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps", "--prefix", prefix, wheel], env=dict(os.environ, PYTHONPATH=""))
             site = next(directory for directory, _, _ in os.walk(prefix) if directory.endswith("site-packages"))
-            code = "from envdiff import compare_mappings; print(compare_mappings(dict(A=\"x\"), [dict(A=\"y\")]).targets[0].difference.changed)"
+            code = "from envdiff import ComparisonError, Difference, Source, TargetResult, ComparisonResult, compare_files, compare_mappings, result_document; r=compare_mappings(dict(A=\"x\"), [dict(A=\"y\")]); print(result_document(ComparisonResult((TargetResult(1, Difference(changed=(\"A\",)), (Source(\"A\", \"TARGET\", 1),)),)))[\"schema_version\"]); print(compare_files(\"missing\", []) == ComparisonError(\"input\")); print(r.targets[0].difference.changed)"
             result = subprocess.run([sys.executable, "-c", code], env=dict(os.environ, PYTHONPATH=site), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(result.stdout.strip(), "(\u0027A\u0027,)")
+            self.assertEqual(result.stdout.splitlines(), ["1", "True", "(\u0027A\u0027,)"])
         finally:
             shutil.rmtree(temporary)
     def test_built_wheel_console_command_enforces_total_input_budget(self):
