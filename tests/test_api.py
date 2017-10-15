@@ -138,6 +138,13 @@ class PublicResultTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     constructor(*args)
 
+    def test_namedtuple_make_and_replace_cannot_bypass_public_validation(self):
+        result = TargetResult(1, Difference())
+        with self.assertRaises(ValueError):
+            TargetResult._make((True, Difference(), ()))
+        with self.assertRaises(ValueError):
+            result._replace(target=True)
+
     def test_public_result_representation_contains_only_contract_metadata(self):
         result = ComparisonResult((TargetResult(1, Difference((), (), ("PORT",)), ()),))
         self.assertIn("PORT", repr(result))
