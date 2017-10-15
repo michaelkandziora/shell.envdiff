@@ -4,6 +4,9 @@ from collections import namedtuple
 from .core import (compare_effective_targets, compare_targets, filter_reports,
                    key_set_reports)
 
+_ERROR_KINDS = ("input", "output")
+_SOURCE_ROLES = ("REFERENCE", "BASE", "TARGET")
+
 
 class Difference(namedtuple("DifferenceBase", "missing extra changed")):
     """Sorted key-only difference categories, stored as immutable tuples."""
@@ -21,7 +24,8 @@ class Source(namedtuple("SourceBase", "key role ordinal")):
     __slots__ = ()
 
     def __new__(cls, key, role, ordinal):
-        if not isinstance(key, str) or not isinstance(role, str) or not isinstance(ordinal, int):
+        if (not isinstance(key, str) or role not in _SOURCE_ROLES or
+                isinstance(ordinal, bool) or not isinstance(ordinal, int) or ordinal < 1):
             raise ValueError("invalid result contract")
         return super(Source, cls).__new__(cls, key, role, ordinal)
 
@@ -32,8 +36,9 @@ class TargetResult(namedtuple("TargetResultBase", "target difference sources")):
 
     def __new__(cls, target, difference, sources=()):
         sources = tuple(sources)
-        if not isinstance(target, int) or not isinstance(difference, Difference) or not all(
-                isinstance(source, Source) for source in sources):
+        if (isinstance(target, bool) or not isinstance(target, int) or target < 1 or
+                not isinstance(difference, Difference) or not all(
+                isinstance(source, Source) for source in sources)):
             raise ValueError("invalid result contract")
         return super(TargetResult, cls).__new__(cls, target, difference, sources)
 
@@ -53,11 +58,20 @@ class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
     """Stable, detail-free public failure category for comparison boundaries."""
     __slots__ = ()
 
+    def __new__(cls, kind):
+        if kind not in _ERROR_KINDS:
+            raise ValueError("invalid error contract")
+        return super(ComparisonError, cls).__new__(cls, kind)
+
 
 def compare_mappings(reference, targets, bases=(), includes=(), excludes=(),
                      keys_only=False):
     """Compare mapping inputs through the same ordered comparison core as the CLI."""
     try:
+        targets = tuple(targets)
+        bases = tuple(bases)
+        if not targets:
+            return ComparisonError("input")
         reports = (compare_effective_targets(reference, bases, targets)
                    if bases else compare_targets(reference, targets))
         reports = filter_reports(reports, includes, excludes)
@@ -76,9 +90,13 @@ def compare_files(reference_path, target_paths, base_paths=(), max_bytes=None,
     if total_bytes is None:
         total_bytes = DEFAULT_TOTAL_BYTES
     try:
+        target_paths = tuple(target_paths)
+        base_paths = tuple(base_paths)
+        if not target_paths:
+            return ComparisonError("input")
         reference, bases, targets = _read_layered_inputs(
             reference_path, base_paths, target_paths, max_bytes, encoding, total_bytes)
-    except (IOError, UnicodeError, ValueError):
+    except (AttributeError, IOError, TypeError, UnicodeError, ValueError):
         return ComparisonError("input")
     return compare_mappings(reference, targets, bases, includes, excludes, keys_only)
 
