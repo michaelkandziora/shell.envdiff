@@ -8,6 +8,12 @@ _ERROR_KINDS = ("input", "output")
 _SOURCE_ROLES = ("REFERENCE", "BASE", "TARGET")
 
 
+def _replacement_values(record, changes):
+    if set(changes) - set(record._fields):
+        raise ValueError("invalid result contract")
+    return [changes.get(field, getattr(record, field)) for field in record._fields]
+
+
 class Difference(namedtuple("DifferenceBase", "missing extra changed")):
     """Sorted key-only difference categories, stored as immutable tuples."""
     __slots__ = ()
@@ -23,9 +29,7 @@ class Difference(namedtuple("DifferenceBase", "missing extra changed")):
         return cls(*tuple(iterable))
 
     def _replace(self, **changes):
-        return self.__class__(changes.get("missing", self.missing),
-                              changes.get("extra", self.extra),
-                              changes.get("changed", self.changed))
+        return self.__class__(*_replacement_values(self, changes))
 
 
 class Source(namedtuple("SourceBase", "key role ordinal")):
@@ -43,8 +47,7 @@ class Source(namedtuple("SourceBase", "key role ordinal")):
         return cls(*tuple(iterable))
 
     def _replace(self, **changes):
-        return self.__class__(changes.get("key", self.key), changes.get("role", self.role),
-                              changes.get("ordinal", self.ordinal))
+        return self.__class__(*_replacement_values(self, changes))
 
 
 class TargetResult(namedtuple("TargetResultBase", "target difference sources")):
@@ -64,9 +67,7 @@ class TargetResult(namedtuple("TargetResultBase", "target difference sources")):
         return cls(*tuple(iterable))
 
     def _replace(self, **changes):
-        return self.__class__(changes.get("target", self.target),
-                              changes.get("difference", self.difference),
-                              changes.get("sources", self.sources))
+        return self.__class__(*_replacement_values(self, changes))
 
 
 class ComparisonResult(namedtuple("ComparisonResultBase", "targets")):
@@ -84,7 +85,7 @@ class ComparisonResult(namedtuple("ComparisonResultBase", "targets")):
         return cls(*tuple(iterable))
 
     def _replace(self, **changes):
-        return self.__class__(changes.get("targets", self.targets))
+        return self.__class__(*_replacement_values(self, changes))
 
 
 class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
@@ -101,7 +102,7 @@ class ComparisonError(namedtuple("ComparisonErrorBase", "kind")):
         return cls(*tuple(iterable))
 
     def _replace(self, **changes):
-        return self.__class__(changes.get("kind", self.kind))
+        return self.__class__(*_replacement_values(self, changes))
 
 
 def compare_mappings(reference, targets, bases=(), includes=(), excludes=(),
@@ -110,6 +111,8 @@ def compare_mappings(reference, targets, bases=(), includes=(), excludes=(),
     try:
         targets = tuple(targets)
         bases = tuple(bases)
+        includes = tuple(includes)
+        excludes = tuple(excludes)
         if not targets:
             return ComparisonError("input")
         reports = (compare_effective_targets(reference, bases, targets)
