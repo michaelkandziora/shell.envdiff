@@ -109,6 +109,32 @@ class PublicResultTests(unittest.TestCase):
                                   includes=("A", "C"), keys_only=True)
         self.assertEqual(result.targets[0].difference, Difference((), ("C",), ()))
 
+    def test_public_mapping_api_materializes_include_exclude_iterators_once(self):
+        reference = {"A": "old", "B": "old"}
+        targets = [{"A": "new", "B": "new"}, {"A": "new", "B": "new"}]
+        included = compare_mappings(reference, targets, includes=iter(("B", "A")))
+        excluded = compare_mappings(reference, targets, excludes=iter(("B", "A")))
+        self.assertEqual([item.difference.changed for item in included.targets],
+                         [("A", "B"), ("A", "B")])
+        self.assertEqual([item.difference.changed for item in excluded.targets], [(), ()])
+
+    def test_public_file_api_materializes_include_exclude_iterators_once(self):
+        directory = tempfile.mkdtemp()
+        try:
+            paths = [os.path.join(directory, name) for name in ("reference", "target-one", "target-two")]
+            for path, text in zip(paths, ("A=old\nB=old\n", "A=new\nB=new\n", "A=new\nB=new\n")):
+                with open(path, "w") as stream:
+                    stream.write(text)
+            included = compare_files(paths[0], paths[1:], includes=iter(("B", "A")))
+            excluded = compare_files(paths[0], paths[1:], excludes=iter(("B", "A")))
+            self.assertEqual([item.difference.changed for item in included.targets],
+                             [("A", "B"), ("A", "B")])
+            self.assertEqual([item.difference.changed for item in excluded.targets], [(), ()])
+        finally:
+            for path in paths:
+                os.unlink(path)
+            os.rmdir(directory)
+
     def test_public_result_document_matches_versioned_cli_shape(self):
         result = compare_mappings({"A": "one"}, [{"A": "two"}])
         self.assertEqual(result_document(result), {"schema_version": 1,
@@ -152,6 +178,8 @@ class PublicResultTests(unittest.TestCase):
             ComparisonResult._make(((["mutable"],),))
         with self.assertRaises(ValueError):
             ComparisonError("input")._replace(kind="private")
+        with self.assertRaises(ValueError):
+            result._replace(unknown="ignored")
 
     def test_public_result_representation_contains_only_contract_metadata(self):
         result = ComparisonResult((TargetResult(1, Difference((), (), ("PORT",)), ()),))
